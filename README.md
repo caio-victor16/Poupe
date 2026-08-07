@@ -7,8 +7,6 @@ O sistema automatiza o gerenciamento financeiro por meio de registro de gastos e
 ## ✨ Funcionalidades
 
 - 📊 Controle e gerenciamento de gastos;
-- 💳 Registro e acompanhamento de boletos;
-- 📂 Importação de extratos bancários;
 - 📈 Previsão financeira baseada no histórico do usuário;
 - 💡 Recomendações inteligentes para evitar endividamento;
 - 💰 Definição de limite mensal de gastos;
