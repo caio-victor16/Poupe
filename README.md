@@ -2,7 +2,7 @@
 
 O **Poupe+** é um aplicativo de controle financeiro desenvolvido para auxiliar pequenos empreendedores, especialmente proprietários de restaurantes e comércios, na organização de suas finanças e na prevenção de endividamento.
 
-O sistema automatiza o gerenciamento financeiro por meio da importação de extratos bancários, registro de gastos e análise inteligente dos dados, reduzindo a necessidade de controles manuais em papéis ou planilhas.
+O sistema automatiza o gerenciamento financeiro por meio de registro de gastos e análise inteligente dos dados, reduzindo a necessidade de controles em papéis ou planilhas.
 
 ## ✨ Funcionalidades
 
@@ -17,7 +17,7 @@ O sistema automatiza o gerenciamento financeiro por meio da importação de extr
 
 ## 🎯 Objetivo
 
-O principal objetivo do FinanceAI é oferecer uma ferramenta simples e inteligente para ajudar usuários a controlarem seus gastos, planejarem melhor suas finanças e tomarem decisões financeiras mais seguras, utilizando recursos de Inteligência Artificial para gerar previsões e recomendações.
+O principal objetivo do Poupe+ é oferecer uma ferramenta simples e inteligente para ajudar usuários a controlarem seus gastos, planejarem melhor suas finanças e tomarem decisões financeiras mais seguras, utilizando recursos de Inteligência Artificial para gerar previsões e recomendações.
 
 ## 🛠️ Tecnologias
 
@@ -41,3 +41,4 @@ O projeto foi modelado utilizando Diagramas de Classes UML, representando o dom�
 - Maria Eduarda Cardoso
 - Maria Eduarda da Silva
 - Rafael Alves
+- Arthur Spinola
