@@ -127,24 +127,4 @@ class UsuarioRepository:
 
         conn.close()
 
-    def gastos_por_categoria(self, id_usuario):
-
-        conn = get_connection()
-
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.callproc(
-            "sp_gastos_categoria",
-            [id_usuario]
-        )
-
-        resultado = []
-
-        for result in cursor.stored_results():
-            resultado.extend(result.fetchall())
-
-        cursor.close()
-
-        conn.close()
-
-        return resultado
+    
