@@ -1,16 +1,16 @@
 from app.database import get_connection
 
 
-class PrevisaoRepository:
+class RelatorioRepository:
 
-    def calcular(self, id_usuario):
+    def financeiro(self, id_usuario):
 
         conn = get_connection()
 
         cursor = conn.cursor(dictionary=True)
 
         cursor.callproc(
-            "sp_previsao_financeira",
+            "sp_relatorio_financeiro",
             [id_usuario]
         )
 

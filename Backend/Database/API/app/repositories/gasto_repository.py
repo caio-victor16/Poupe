@@ -5,128 +5,120 @@ class GastoRepository:
     def listar(self):
 
         conn = get_connection()
-
         cursor = conn.cursor(dictionary=True)
 
-        cursor.execute("select * from usuario")
+        cursor.execute("select * from gasto")
 
-        usuarios = cursor.fetchall()
+        gastos = cursor.fetchall()
 
         cursor.close()
-
         conn.close()
 
-        return usuarios
+        return gastos
 
-
-    def buscar_por_id(self, id_usuario):
+    def buscar_por_id(self, id_gasto):
 
         conn = get_connection()
-
         cursor = conn.cursor(dictionary=True)
 
-        sql = "select * from usuario where id_usuario = %s"
+        cursor.execute(
+            "select * from gasto where id_gasto = %s",
+            (id_gasto,)
+        )
 
-        cursor.execute(sql, (id_usuario,))
-
-        usuario = cursor.fetchone()
+        gasto = cursor.fetchone()
 
         cursor.close()
-
         conn.close()
 
-        return usuario
+        return gasto
 
-
-    def inserir(self, usuario):
+    def inserir(self, gasto):
 
         conn = get_connection()
-
         cursor = conn.cursor()
 
         sql = """
-        insert into usuario
-        (nome,email,telefone,senha,renda_mensal,limite_gastos)
-        values (%s,%s,%s,%s,%s,%s)
+        insert into gasto
+        (
+            id_usuario,
+            id_categoria,
+            valor,
+            data,
+            descricao,
+            recorrente,
+            tipo_pagamento,
+            status_gasto
+        )
+        values (%s, %s, %s, %s, %s, %s, %s, %s)
         """
 
         cursor.execute(sql, (
-            usuario.nome,
-            usuario.email,
-            usuario.telefone,
-            usuario.senha,
-            usuario.renda_mensal,
-            usuario.limite_gastos
+            gasto.id_usuario,
+            gasto.id_categoria,
+            gasto.valor,
+            gasto.data,
+            gasto.descricao,
+            gasto.recorrente,
+            gasto.tipo_pagamento,
+            gasto.status_gasto
         ))
 
         conn.commit()
 
         cursor.close()
-
         conn.close()
 
-
-    def atualizar(self, usuario):
+    def atualizar(self, gasto):
 
         conn = get_connection()
-
         cursor = conn.cursor()
 
         sql = """
-        update usuario
+        update gasto
         set
-        nome=%s,
-        email=%s,
-        telefone=%s,
-        senha=%s,
-        renda_mensal=%s,
-        limite_gastos=%s
-        where id_usuario=%s
+            id_usuario = %s,
+            id_categoria = %s,
+            valor = %s,
+            data = %s,
+            descricao = %s,
+            recorrente = %s,
+            tipo_pagamento = %s,
+            status_gasto = %s
+        where id_gasto = %s
         """
 
         cursor.execute(sql, (
-
-            usuario.nome,
-
-            usuario.email,
-
-            usuario.telefone,
-
-            usuario.senha,
-
-            usuario.renda_mensal,
-
-            usuario.limite_gastos,
-
-            usuario.id_usuario
-
+            gasto.id_usuario,
+            gasto.id_categoria,
+            gasto.valor,
+            gasto.data,
+            gasto.descricao,
+            gasto.recorrente,
+            gasto.tipo_pagamento,
+            gasto.status_gasto,
+            gasto.id_gasto
         ))
 
         conn.commit()
 
         cursor.close()
-
         conn.close()
 
-
-    def excluir(self, id_usuario):
+    def excluir(self, id_gasto):
 
         conn = get_connection()
-
         cursor = conn.cursor()
 
         cursor.execute(
-            "delete from usuario where id_usuario=%s",
-            (id_usuario,)
+            "delete from gasto where id_gasto = %s",
+            (id_gasto,)
         )
 
         conn.commit()
 
         cursor.close()
-
         conn.close()
-
-    
 
     def gastos_por_categoria(self, id_usuario):
 
@@ -140,92 +132,71 @@ class GastoRepository:
 
         resultado = []
 
-        for r in cursor.stored_results():
-            resultado.extend(r.fetchall())
+        for result in cursor.stored_results():
+            resultado.extend(result.fetchall())
 
         cursor.close()
         conn.close()
 
         return resultado
-
-    def gastos_por_periodo(self, id_usuario, data_inicio, data_fim):
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-         cursor.callproc(
-            "sp_gastos_periodo",
-            [id_usuario, data_inicio, data_fim]
-        )
-        
-        resultado = []
-        for r in cursor.stored_results():
-            resultado.extend(result.fetchall())
-            cursor.close()
-            conn.close()
-            return resultado
-
-    def gastos_recorrentes(self, id_usuario):
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-         cursor.callproc(
-            "sp_gastos_recorrentes",
-            [id_usuario]
-        )
-        
-        resultado = []
-        for r in cursor.stored_results():
-            resultado.extend(result.fetchall())
-            cursor.close()
-            conn.close()
-            return resultado
-
-    def ranking categorias(self, id_usuario):
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-         cursor.callproc(
-            "sp_ranking_categorias",
-            [id_usuario]
-        )
-        
-        resultado = []
-        for r in cursor.stored_results():
-            resultado.extend(result.fetchall())
-            cursor.close()
-            conn.close()
-            return resultado
-
-    def total_gasto_mes(self, id_usuario):
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-         cursor.callproc(
-            "sp_total_gasto_mes",
-            [id_usuario]
-        )
-        
-        resultado = []
-        for r in cursor.stored_results():
-            resultado.extend(result.fetchall())
-            cursor.close()
-            conn.close()
-            return resultado
-
-    def gastos_acima_valor(self, id_usuario, valor):
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-         cursor.callproc(
-            "sp_gastos_Acima_valor",
-            [id_usuario, valor]
-        )
-        
-        resultado = []
-        for r in cursor.stored_results():
-            resultado.extend(result.fetchall())
-            cursor.close()
-            conn.close()
-            return resultado
-
     
+    def gastos_por_periodo(
+        self,
+        id_usuario,
+        data_inicio,
+        data_fim
+    ):
+
+        conn = get_connection()
+
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.callproc(
+            "sp_gastos_por_periodo",
+            [
+                id_usuario,
+                data_inicio,
+                data_fim
+            ]
+        )
+
+        resultado = []
+
+        for result in cursor.stored_results():
+
+            resultado.extend(
+                result.fetchall()
+            )
+
+        cursor.close()
+        conn.close()
+
+        return resultado
+    
+    def verificar_limite(self, id_usuario):
+
+        conn = get_connection()
+
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.callproc(
+            "sp_verificar_limite_gastos",
+            [id_usuario]
+        )
+
+        resultado = []
+
+        for result in cursor.stored_results():
+
+            resultado.extend(
+                result.fetchall()
+            )
+
+        cursor.close()
+        conn.close()
+
+        if resultado:
+
+            return resultado[0]
+
+        return None

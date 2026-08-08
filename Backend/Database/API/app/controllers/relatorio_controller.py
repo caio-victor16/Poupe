@@ -1,24 +1,24 @@
 from flask import Blueprint
 from flask import jsonify
 
-from app.services.previsao_service import PrevisaoService
+from app.services.relatorio_service import RelatorioService
 
 
-previsao_bp = Blueprint(
-    "previsao",
+relatorio_bp = Blueprint(
+    "relatorio",
     __name__
 )
 
-service = PrevisaoService()
+service = RelatorioService()
 
 
-@previsao_bp.route(
-    "/previsoes/usuario/<int:id_usuario>",
+@relatorio_bp.route(
+    "/relatorios/usuario/<int:id_usuario>",
     methods=["GET"]
 )
-def calcular(id_usuario):
+def financeiro(id_usuario):
 
-    resultado = service.calcular(
+    resultado = service.financeiro(
         id_usuario
     )
 
