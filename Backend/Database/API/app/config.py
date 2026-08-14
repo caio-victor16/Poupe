@@ -1,9 +1,28 @@
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 class Config:
 
-    HOST = "localhost"
+    HOST = os.getenv(
+        "MYSQL_HOST",
+        "localhost"
+    )
 
-    USER = "root"
+    USER = os.getenv(
+        "MYSQL_USER",
+        "root"
+    )
 
-    PASSWORD = "wasd90"
+    PASSWORD = os.getenv(
+        "MYSQL_PASSWORD",
+        ""
+    )
 
-    DATABASE = "poupe"
+    DATABASE = os.getenv(
+        "MYSQL_DATABASE",
+        "poupe"
+    )
