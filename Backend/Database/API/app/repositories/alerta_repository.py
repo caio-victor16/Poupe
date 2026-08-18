@@ -1,47 +1,26 @@
-from app.database import db, get_raw_connection
+from sqlalchemy import text
+
+from app.database import db
 from app.models.alerta import Alerta
 
 
 class AlertaRepository:
-
     def listar_por_usuario(self, id_usuario):
-        return (
-            Alerta.query
-            .filter_by(id_usuario=id_usuario)
-            .order_by(Alerta.data.desc())
-            .all()
-        )
+        return Alerta.listar_por_usuario(id_usuario)
 
     def buscar_por_id(self, id_alerta):
-        return Alerta.query.get(id_alerta)
+        return Alerta.buscar_por_id(id_alerta)
 
     def inserir(self, alerta):
-        db.session.add(alerta)
-        db.session.commit()
+        alerta.salvar()
 
-    def marcar_como_visualizado(self, id_alerta):
+    def marcar_como_visualizado(self, alerta):
+        alerta.marcar_como_visualizado()
 
-        alerta = Alerta.query.get(id_alerta)
-
-        if alerta:
-            alerta.visualizado = True
-            db.session.commit()
-
-    def excluir(self, id_alerta):
-
-        alerta = Alerta.query.get(id_alerta)
-
-        if alerta:
-            db.session.delete(alerta)
-            db.session.commit()
+    def excluir(self, alerta):
+        alerta.deletar()
 
     def gerar_alerta_limite(self, id_usuario):
-
-        conn = get_raw_connection()
-        cursor = conn.cursor()
-
-        cursor.callproc("sp_gerar_alerta_limite", [id_usuario])
-
-        conn.commit()
-        cursor.close()
-        conn.close()
+        sql = text("CALL sp_gerar_alerta_limite(:id_usuario)")
+        db.session.execute(sql, {"id_usuario": id_usuario})
+        db.session.commit()
