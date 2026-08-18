@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poupe+ | Alertas</title>
+<!-- Link para o CSS separado -->
+<link rel="stylesheet" href=" style7.css">
+<!-- Ícones do Lucide -->
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<!-- Menu Lateral -->
+<aside>
+<div class="brand-wrapper">
+<div class="brand">poupe+</div>
+<i data-lucide="menu" class="menu-icon"></i>
+</div>
+
+<nav class="nav-container">
+<ul class="nav-list">
+<li class="nav-item"><a href="index4.html"><i data-lucide="home"></i> Início</a></li>
+<li class="nav-item active"><a href="index2.html"><i data-lucide="calendar"></i> Gastos</a></li>
+<li class="nav-item"><a href="index3.html"><i data-lucide="wallet"></i> Receitas</a></li>
+<li class="nav-item"><a href="index9.html"><i data-lucide="bar-chart-3"></i> Relatórios</a></li>
+<li class="nav-item"><a href="index6.html"><i data-lucide="target"></i> Metas</a></li>
+<li class="nav-item"><a href="index7.html"><i data-lucide="bell"></i> Alertas</a></li>
+</ul>
+
+<ul class="nav-list nav-bottom">
+<li class="nav-item"><a href="index8.html"><i data-lucide="settings"></i> Configurações</a></li>
+<li class="nav-item"><a href="index.html"><i data-lucide="log-out"></i> Sair</a></li>
+</ul>
+</nav>
+</aside>
+
+<!-- Conteúdo Principal -->
+<main>
+<!-- Topo da Página -->
+<header class="page-header">
+<h1>Alertas</h1>
+</header>
+
+<!-- Lista de Cards de Alertas -->
+<div class="alerts-container" id="alertsList">
+<!-- Inserido dinamicamente via JS -->
+</div>
+
+<!-- Botão Inferior "Ver todos os alertas" -->
+<button class="btn-all-alerts">
+<span>Ver todos os alertas</span>
+<i data-lucide="chevron-right"></i>
+</button>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+lucide.createIcons();
+
+const alertsListEl = document.getElementById('alertsList');
+
+// Buscar dados de Gastos no localStorage
+const expenses = JSON.parse(localStorage.getItem('poupePlus_expenses')) || [
+{ description: 'Mercado', category: 'Alimentação', date: '2026-08-18', amount: 320.00 },
+{ description: 'Luz', category: 'Outros', date: '2026-08-18', amount: 150.00 }
+];
+
+// Calcular limites dinâmicos para Alertas
+const foodExpenses = expenses
+.filter(e => e.category === 'Alimentação')
+.reduce((sum, e) => sum + Number(e.amount), 0);
+
+const foodLimit = 400; // Limite padrão estipulado
+const foodPct = Math.min(Math.round((foodExpenses / foodLimit) * 100), 100);
+
+// Array de Alertas Gerados
+const alertsData = [
+{
+type: 'danger',
+icon: 'trending-up',
+title: 'Gasto acima do esperado',
+description: `Você já gastou ${foodPct}% do limite de Alimentação.`,
+date: 'Hoje'
+},
+{
+type: 'warning',
+icon: 'alert-triangle',
+title: 'Conta próxima do vencimento',
+description: 'A conta de Luz vence em 2 dias.',
+date: '18/08/2026'
+},
+{
+type: 'success',
+icon: 'check',
+title: 'Meta quase alcançada',
+description: 'Você já alcançou 80% da sua meta Viagem!',
+date: '17/08/2026'
+}
+];
+
+// Renderização na Tela
+function renderAlerts() {
+alertsListEl.innerHTML = '';
+
+alertsData.forEach(alert => {
+const card = document.createElement('div');
+card.className = 'alert-card';
+
+card.innerHTML = `
+<div class="alert-icon-box ${alert.type}">
+<i data-lucide="${alert.icon}"></i>
+</div>
+<div class="alert-content">
+<h3>${alert.title}</h3>
+<p>${alert.description}</p>
+<span class="alert-date">${alert.date}</span>
+</div>
+`;
+
+alertsListEl.appendChild(card);
+});
+
+lucide.createIcons();
+}
+
+renderAlerts();
+});
+</script>
+</body>
+</html>
