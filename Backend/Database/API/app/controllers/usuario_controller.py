@@ -1,86 +1,68 @@
-from flask import Blueprint
-from flask import jsonify
-from flask import request
+from flask import Blueprint, jsonify, request
+from sqlalchemy.exc import SQLAlchemyError
 
-from app.models.usuario import Usuario
 from app.services.usuario_service import UsuarioService
+from app.database import db
 
 usuario_bp = Blueprint("usuario", __name__)
-
 service = UsuarioService()
 
 
-@usuario_bp.route("/usuarios", methods=["GET"])
+@usuario_bp.get("/usuarios")
 def listar():
+    return jsonify(service.listar()), 200
 
-    return jsonify(service.listar())
 
-
-@usuario_bp.route("/usuarios/<int:id_usuario>", methods=["GET"])
+@usuario_bp.get("/usuarios/<int:id_usuario>")
 def buscar(id_usuario):
-
-    return jsonify(service.buscar_por_id(id_usuario))
-
-
-@usuario_bp.route("/usuarios", methods=["POST"])
-def inserir():
-
-    dados = request.get_json()
-
-    usuario = Usuario(
-
-        nome=dados["nome"],
-
-        email=dados["email"],
-
-        telefone=dados["telefone"],
-
-        senha=dados["senha"],
-
-        renda_mensal=dados["renda_mensal"],
-
-        limite_gastos=dados["limite_gastos"]
-
-    )
-
-    service.inserir(usuario)
-
-    return jsonify({"mensagem": "usuário cadastrado"}), 201
+    usuario = service.buscar_por_id(id_usuario)
+    if usuario is None:
+        return jsonify({"erro": "Usuário não encontrado."}), 404
+    return jsonify(usuario), 200
 
 
-@usuario_bp.route("/usuarios/<int:id_usuario>", methods=["PUT"])
+@usuario_bp.post("/usuarios")
+def criar():
+    try:
+        dados = request.get_json() or {}
+        usuario = service.criar(dados)
+        return jsonify(usuario), 201
+
+    except ValueError as erro:
+        return jsonify({"erro": str(erro)}), 400
+
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"erro": "Erro ao salvar usuário no banco de dados."}), 500
+
+
+@usuario_bp.put("/usuarios/<int:id_usuario>")
 def atualizar(id_usuario):
+    try:
+        dados = request.get_json() or {}
+        usuario = service.atualizar(id_usuario, dados)
 
-    dados = request.get_json()
+        if usuario is None:
+            return jsonify({"erro": "Usuário não encontrado."}), 404
 
-    usuario = Usuario(
+        return jsonify(usuario), 200
 
-        id_usuario=id_usuario,
+    except ValueError as erro:
+        return jsonify({"erro": str(erro)}), 400
 
-        nome=dados["nome"],
-
-        email=dados["email"],
-
-        telefone=dados["telefone"],
-
-        senha=dados["senha"],
-
-        renda_mensal=dados["renda_mensal"],
-
-        limite_gastos=dados["limite_gastos"]
-
-    )
-
-    service.atualizar(usuario)
-
-    return jsonify({"mensagem": "usuário atualizado"})
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"erro": "Erro ao atualizar usuário."}), 500
 
 
-@usuario_bp.route("/usuarios/<int:id_usuario>", methods=["DELETE"])
+@usuario_bp.delete("/usuarios/<int:id_usuario>")
 def excluir(id_usuario):
+    try:
+        deletado = service.excluir(id_usuario)
+        if not deletado:
+            return jsonify({"erro": "Usuário não encontrado."}), 404
+        return "", 204
 
-    service.excluir(id_usuario)
-
-    return jsonify({"mensagem": "usuário removido"})
-
-
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"erro": "Erro ao excluir usuário."}), 500
