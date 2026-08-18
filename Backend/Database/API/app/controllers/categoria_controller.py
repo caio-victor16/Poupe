@@ -1,74 +1,65 @@
-from flask import Blueprint
-from flask import jsonify
-from flask import request
+from flask import Blueprint, jsonify, request
+from sqlalchemy.exc import SQLAlchemyError
 
-from app.models.categoria import Categoria
 from app.services.categoria_service import CategoriaService
-
+from app.database import db
 
 categoria_bp = Blueprint("categoria", __name__)
-
 service = CategoriaService()
 
 
-@categoria_bp.route("/categorias", methods=["GET"])
+@categoria_bp.get("/categorias")
 def listar():
+    return jsonify(service.listar()), 200
 
-    return jsonify(service.listar())
 
-
-@categoria_bp.route("/categorias/<int:id_categoria>", methods=["GET"])
+@categoria_bp.get("/categorias/<int:id_categoria>")
 def buscar(id_categoria):
-
     categoria = service.buscar_por_id(id_categoria)
-
     if categoria is None:
-
-        return jsonify({
-            "erro": "categoria não encontrada"
-        }), 404
-
-    return jsonify(categoria)
+        return jsonify({"erro": "Categoria não encontrada."}), 404
+    return jsonify(categoria), 200
 
 
-@categoria_bp.route("/categorias", methods=["POST"])
-def inserir():
+@categoria_bp.post("/categorias")
+def criar():
+    try:
+        dados = request.get_json() or {}
+        categoria = service.criar(dados)
+        return jsonify(categoria), 201
 
-    dados = request.get_json()
+    except ValueError as erro:
+        return jsonify({"erro": str(erro)}), 400
 
-    categoria = Categoria(
-        nome=dados["nome"]
-    )
-
-    service.inserir(categoria)
-
-    return jsonify({
-        "mensagem": "categoria cadastrada"
-    }), 201
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"erro": "Erro ao salvar categoria."}), 500
 
 
-@categoria_bp.route("/categorias/<int:id_categoria>", methods=["PUT"])
+@categoria_bp.put("/categorias/<int:id_categoria>")
 def atualizar(id_categoria):
+    try:
+        dados = request.get_json() or {}
+        categoria = service.atualizar(id_categoria, dados)
 
-    dados = request.get_json()
+        if categoria is None:
+            return jsonify({"erro": "Categoria não encontrada."}), 404
 
-    categoria = Categoria(
-        id_categoria=id_categoria,
-        nome=dados["nome"]
-    )
+        return jsonify(categoria), 200
 
-    service.atualizar(categoria)
-
-    return jsonify({
-        "mensagem": "categoria atualizada"
-    })
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"erro": "Erro ao atualizar categoria."}), 500
 
 
-@categoria_bp.route("/categorias/<int:id_categoria>", methods=["DELETE"])
+@categoria_bp.delete("/categorias/<int:id_categoria>")
 def excluir(id_categoria):
+    try:
+        deletado = service.excluir(id_categoria)
+        if not deletado:
+            return jsonify({"erro": "Categoria não encontrada."}), 404
+        return "", 204
 
-    service.excluir(id_categoria)
-
-    return jsonify({
-        "mensagem": "categoria removida"
-    })
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"erro": "Erro ao excluir categoria."}), 500
