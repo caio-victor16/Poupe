@@ -1,131 +1,52 @@
-from app.database import get_connection
+from app.database import db, get_raw_connection
+from app.models.boleto import Boleto
 
 
 class BoletoRepository:
 
     def listar(self):
-
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute("select * from boleto order by vencimento")
-
-        boletos = cursor.fetchall()
-
-        cursor.close()
-        conn.close()
-
-        return boletos
+        return Boleto.query.order_by(Boleto.vencimento).all()
 
     def buscar_por_id(self, id_boleto):
-
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute(
-            "select * from boleto where id_boleto = %s",
-            (id_boleto,)
-        )
-
-        boleto = cursor.fetchone()
-
-        cursor.close()
-        conn.close()
-
-        return boleto
+        return Boleto.query.get(id_boleto)
 
     def inserir(self, boleto):
-
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        sql = """
-        insert into boleto
-        (
-            id_usuario,
-            codigo_barras,
-            valor,
-            vencimento,
-            status
-        )
-        values (%s, %s, %s, %s, %s)
-        """
-
-        cursor.execute(sql, (
-            boleto.id_usuario,
-            boleto.codigo_barras,
-            boleto.valor,
-            boleto.vencimento,
-            boleto.status
-        ))
-
-        conn.commit()
-
-        cursor.close()
-        conn.close()
+        db.session.add(boleto)
+        db.session.commit()
 
     def atualizar(self, boleto):
 
-        conn = get_connection()
-        cursor = conn.cursor()
+        existente = Boleto.query.get(boleto.id_boleto)
 
-        sql = """
-        update boleto
-        set
-            id_usuario = %s,
-            codigo_barras = %s,
-            valor = %s,
-            vencimento = %s,
-            status = %s
-        where id_boleto = %s
-        """
+        if not existente:
+            return
 
-        cursor.execute(sql, (
-            boleto.id_usuario,
-            boleto.codigo_barras,
-            boleto.valor,
-            boleto.vencimento,
-            boleto.status,
-            boleto.id_boleto
-        ))
+        existente.id_usuario = boleto.id_usuario
+        existente.codigo_barras = boleto.codigo_barras
+        existente.valor = boleto.valor
+        existente.vencimento = boleto.vencimento
+        existente.status = boleto.status
 
-        conn.commit()
-
-        cursor.close()
-        conn.close()
+        db.session.commit()
 
     def excluir(self, id_boleto):
 
-        conn = get_connection()
-        cursor = conn.cursor()
+        boleto = Boleto.query.get(id_boleto)
 
-        cursor.execute(
-            "delete from boleto where id_boleto = %s",
-            (id_boleto,)
-        )
-
-        conn.commit()
-
-        cursor.close()
-        conn.close()
+        if boleto:
+            db.session.delete(boleto)
+            db.session.commit()
 
     def proximos_vencimentos(self, id_usuario):
 
-        conn = get_connection()
+        conn = get_raw_connection()
         cursor = conn.cursor(dictionary=True)
 
-        cursor.callproc(
-            "sp_boletos_proximos_vencimento",
-            [id_usuario]
-        )
+        cursor.callproc("sp_boletos_proximos_vencimento", [id_usuario])
 
         resultado = []
-
         for result in cursor.stored_results():
-
-            resultado.extend(
-                result.fetchall()
-            )
+            resultado.extend(result.fetchall())
 
         cursor.close()
         conn.close()
