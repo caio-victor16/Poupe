@@ -1,95 +1,70 @@
-from flask import Blueprint
-from flask import jsonify
-from flask import request
+from flask import Blueprint, jsonify, request
+from sqlalchemy.exc import SQLAlchemyError
 
-from app.models.boleto import Boleto
 from app.services.boleto_service import BoletoService
-
+from app.database import db
 
 boleto_bp = Blueprint("boleto", __name__)
-
 service = BoletoService()
 
 
-@boleto_bp.route("/boletos", methods=["GET"])
+@boleto_bp.get("/boletos")
 def listar():
+    return jsonify(service.listar()), 200
 
-    return jsonify(service.listar())
 
-
-@boleto_bp.route("/boletos/<int:id_boleto>", methods=["GET"])
+@boleto_bp.get("/boletos/<int:id_boleto>")
 def buscar(id_boleto):
-
     boleto = service.buscar_por_id(id_boleto)
-
     if boleto is None:
-
-        return jsonify({
-            "erro": "boleto não encontrado"
-        }), 404
-
-    return jsonify(boleto)
+        return jsonify({"erro": "Boleto não encontrado."}), 404
+    return jsonify(boleto), 200
 
 
-@boleto_bp.route("/boletos", methods=["POST"])
-def inserir():
+@boleto_bp.post("/boletos")
+def criar():
+    try:
+        dados = request.get_json() or {}
+        boleto = service.criar(dados)
+        return jsonify(boleto), 201
 
-    dados = request.get_json()
+    except ValueError as erro:
+        return jsonify({"erro": str(erro)}), 400
 
-    boleto = Boleto(
-        id_usuario=dados["id_usuario"],
-        codigo_barras=dados["codigo_barras"],
-        valor=dados["valor"],
-        vencimento=dados["vencimento"],
-        status=dados.get("status", "pendente")
-    )
-
-    service.inserir(boleto)
-
-    return jsonify({
-        "mensagem": "boleto cadastrado"
-    }), 201
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"erro": "Erro ao salvar boleto."}), 500
 
 
-@boleto_bp.route("/boletos/<int:id_boleto>", methods=["PUT"])
+@boleto_bp.put("/boletos/<int:id_boleto>")
 def atualizar(id_boleto):
+    try:
+        dados = request.get_json() or {}
+        boleto = service.atualizar(id_boleto, dados)
 
-    dados = request.get_json()
+        if boleto is None:
+            return jsonify({"erro": "Boleto não encontrado."}), 404
 
-    boleto = Boleto(
-        id_boleto=id_boleto,
-        id_usuario=dados["id_usuario"],
-        codigo_barras=dados["codigo_barras"],
-        valor=dados["valor"],
-        vencimento=dados["vencimento"],
-        status=dados["status"]
-    )
+        return jsonify(boleto), 200
 
-    service.atualizar(boleto)
-
-    return jsonify({
-        "mensagem": "boleto atualizado"
-    })
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"erro": "Erro ao atualizar boleto."}), 500
 
 
-@boleto_bp.route("/boletos/<int:id_boleto>", methods=["DELETE"])
+@boleto_bp.delete("/boletos/<int:id_boleto>")
 def excluir(id_boleto):
+    try:
+        deletado = service.excluir(id_boleto)
+        if not deletado:
+            return jsonify({"erro": "Boleto não encontrado."}), 404
+        return "", 204
 
-    service.excluir(id_boleto)
-
-    return jsonify({
-        "mensagem": "boleto removido"
-    })
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({"erro": "Erro ao excluir boleto."}), 500
 
 
-@boleto_bp.route(
-    "/boletos/usuario/<int:id_usuario>/proximos",
-    methods=["GET"]
-)
+@boleto_bp.get("/boletos/usuario/<int:id_usuario>/proximos")
 def proximos_vencimentos(id_usuario):
-
-    resultado = service.proximos_vencimentos(
-        id_usuario
-    )
-
-    return jsonify(resultado)
+    return jsonify(service.proximos_vencimentos(id_usuario)), 200
