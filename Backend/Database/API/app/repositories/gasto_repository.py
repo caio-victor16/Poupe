@@ -1,137 +1,53 @@
-from app.database import get_connection
+from app.database import db, get_raw_connection
+from app.models.gasto import Gasto
+
 
 class GastoRepository:
 
     def listar(self):
-
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute("select * from gasto")
-
-        gastos = cursor.fetchall()
-
-        cursor.close()
-        conn.close()
-
-        return gastos
+        return Gasto.query.all()
 
     def buscar_por_id(self, id_gasto):
-
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute(
-            "select * from gasto where id_gasto = %s",
-            (id_gasto,)
-        )
-
-        gasto = cursor.fetchone()
-
-        cursor.close()
-        conn.close()
-
-        return gasto
+        return Gasto.query.get(id_gasto)
 
     def inserir(self, gasto):
-
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        sql = """
-        insert into gasto
-        (
-            id_usuario,
-            id_categoria,
-            valor,
-            data,
-            descricao,
-            recorrente,
-            tipo_pagamento,
-            status_gasto
-        )
-        values (%s, %s, %s, %s, %s, %s, %s, %s)
-        """
-
-        cursor.execute(sql, (
-            gasto.id_usuario,
-            gasto.id_categoria,
-            gasto.valor,
-            gasto.data,
-            gasto.descricao,
-            gasto.recorrente,
-            gasto.tipo_pagamento,
-            gasto.status_gasto
-        ))
-
-        conn.commit()
-
-        cursor.close()
-        conn.close()
+        db.session.add(gasto)
+        db.session.commit()
 
     def atualizar(self, gasto):
 
-        conn = get_connection()
-        cursor = conn.cursor()
+        existente = Gasto.query.get(gasto.id_gasto)
 
-        sql = """
-        update gasto
-        set
-            id_usuario = %s,
-            id_categoria = %s,
-            valor = %s,
-            data = %s,
-            descricao = %s,
-            recorrente = %s,
-            tipo_pagamento = %s,
-            status_gasto = %s
-        where id_gasto = %s
-        """
+        if not existente:
+            return
 
-        cursor.execute(sql, (
-            gasto.id_usuario,
-            gasto.id_categoria,
-            gasto.valor,
-            gasto.data,
-            gasto.descricao,
-            gasto.recorrente,
-            gasto.tipo_pagamento,
-            gasto.status_gasto,
-            gasto.id_gasto
-        ))
+        existente.id_usuario = gasto.id_usuario
+        existente.id_categoria = gasto.id_categoria
+        existente.valor = gasto.valor
+        existente.data = gasto.data
+        existente.descricao = gasto.descricao
+        existente.recorrente = gasto.recorrente
+        existente.tipo_pagamento = gasto.tipo_pagamento
+        existente.status_gasto = gasto.status_gasto
 
-        conn.commit()
-
-        cursor.close()
-        conn.close()
+        db.session.commit()
 
     def excluir(self, id_gasto):
 
-        conn = get_connection()
-        cursor = conn.cursor()
+        gasto = Gasto.query.get(id_gasto)
 
-        cursor.execute(
-            "delete from gasto where id_gasto = %s",
-            (id_gasto,)
-        )
-
-        conn.commit()
-
-        cursor.close()
-        conn.close()
+        if gasto:
+            db.session.delete(gasto)
+            db.session.commit()
 
     def gastos_por_categoria(self, id_usuario):
 
-        conn = get_connection()
+        conn = get_raw_connection()
         cursor = conn.cursor(dictionary=True)
 
-        cursor.callproc(
-            "sp_gastos_categoria",
-            [id_usuario]
-        )
+        cursor.callproc("sp_gastos_categoria", [id_usuario])
 
         resultado = []
-
         for result in cursor.stored_results():
             resultado.extend(result.fetchall())
 
@@ -139,64 +55,38 @@ class GastoRepository:
         conn.close()
 
         return resultado
-    
-    def gastos_por_periodo(
-        self,
-        id_usuario,
-        data_inicio,
-        data_fim
-    ):
 
-        conn = get_connection()
+    def gastos_por_periodo(self, id_usuario, data_inicio, data_fim):
 
+        conn = get_raw_connection()
         cursor = conn.cursor(dictionary=True)
 
         cursor.callproc(
             "sp_gastos_por_periodo",
-            [
-                id_usuario,
-                data_inicio,
-                data_fim
-            ]
+            [id_usuario, data_inicio, data_fim]
         )
 
         resultado = []
-
         for result in cursor.stored_results():
-
-            resultado.extend(
-                result.fetchall()
-            )
+            resultado.extend(result.fetchall())
 
         cursor.close()
         conn.close()
 
         return resultado
-    
+
     def verificar_limite(self, id_usuario):
 
-        conn = get_connection()
-
+        conn = get_raw_connection()
         cursor = conn.cursor(dictionary=True)
 
-        cursor.callproc(
-            "sp_verificar_limite_gastos",
-            [id_usuario]
-        )
+        cursor.callproc("sp_verificar_limite_gastos", [id_usuario])
 
         resultado = []
-
         for result in cursor.stored_results():
-
-            resultado.extend(
-                result.fetchall()
-            )
+            resultado.extend(result.fetchall())
 
         cursor.close()
         conn.close()
 
-        if resultado:
-
-            return resultado[0]
-
-        return None
+        return resultado[0] if resultado else None
