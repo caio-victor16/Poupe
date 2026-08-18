@@ -1,87 +1,18 @@
-from app.database import get_connection
+from app.models.categoria import Categoria
 
 
 class CategoriaRepository:
-
     def listar(self):
-
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute("select * from categoria order by nome")
-
-        categorias = cursor.fetchall()
-
-        cursor.close()
-        conn.close()
-
-        return categorias
+        return Categoria.listar_todos()
 
     def buscar_por_id(self, id_categoria):
-
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute(
-            "select * from categoria where id_categoria = %s",
-            (id_categoria,)
-        )
-
-        categoria = cursor.fetchone()
-
-        cursor.close()
-        conn.close()
-
-        return categoria
+        return Categoria.buscar_por_id(id_categoria)
 
     def inserir(self, categoria):
+        categoria.salvar()
 
-        conn = get_connection()
-        cursor = conn.cursor()
+    def atualizar(self, categoria, dados):
+        categoria.atualizar(nome=dados.get("nome"))
 
-        cursor.execute(
-            "insert into categoria (nome) values (%s)",
-            (categoria.nome,)
-        )
-
-        conn.commit()
-
-        cursor.close()
-        conn.close()
-
-    def atualizar(self, categoria):
-
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            update categoria
-            set nome = %s
-            where id_categoria = %s
-            """,
-            (
-                categoria.nome,
-                categoria.id_categoria
-            )
-        )
-
-        conn.commit()
-
-        cursor.close()
-        conn.close()
-
-    def excluir(self, id_categoria):
-
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            "delete from categoria where id_categoria = %s",
-            (id_categoria,)
-        )
-
-        conn.commit()
-
-        cursor.close()
-        conn.close()
+    def excluir(self, categoria):
+        categoria.deletar()
