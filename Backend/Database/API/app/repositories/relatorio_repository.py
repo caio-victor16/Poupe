@@ -1,20 +1,12 @@
-from app.database import get_raw_connection
+from sqlalchemy import text
+
+from app.database import db
 
 
 class RelatorioRepository:
-
     def financeiro(self, id_usuario):
-
-        conn = get_raw_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.callproc("sp_relatorio_financeiro", [id_usuario])
-
-        resultado = []
-        for result in cursor.stored_results():
-            resultado.extend(result.fetchall())
-
-        cursor.close()
-        conn.close()
-
-        return resultado[0] if resultado else None
+        sql = text("CALL sp_relatorio_financeiro(:id_usuario)")
+        resultado = db.session.execute(sql, {"id_usuario": id_usuario})
+        linhas = resultado.mappings().all()
+        resultado.close()
+        return dict(linhas[0]) if linhas else None
