@@ -1,54 +1,33 @@
-from app.database import db, get_raw_connection
+from sqlalchemy import text
+
+from app.database import db
 from app.models.boleto import Boleto
 
 
 class BoletoRepository:
-
     def listar(self):
-        return Boleto.query.order_by(Boleto.vencimento).all()
+        return Boleto.listar_todos()
 
     def buscar_por_id(self, id_boleto):
-        return Boleto.query.get(id_boleto)
+        return Boleto.buscar_por_id(id_boleto)
 
     def inserir(self, boleto):
-        db.session.add(boleto)
-        db.session.commit()
+        boleto.salvar()
 
-    def atualizar(self, boleto):
+    def atualizar(self, boleto, dados):
+        boleto.atualizar(
+            codigo_barras=dados.get("codigo_barras"),
+            valor=dados.get("valor"),
+            vencimento=dados.get("vencimento"),
+            status=dados.get("status"),
+        )
 
-        existente = Boleto.query.get(boleto.id_boleto)
-
-        if not existente:
-            return
-
-        existente.id_usuario = boleto.id_usuario
-        existente.codigo_barras = boleto.codigo_barras
-        existente.valor = boleto.valor
-        existente.vencimento = boleto.vencimento
-        existente.status = boleto.status
-
-        db.session.commit()
-
-    def excluir(self, id_boleto):
-
-        boleto = Boleto.query.get(id_boleto)
-
-        if boleto:
-            db.session.delete(boleto)
-            db.session.commit()
+    def excluir(self, boleto):
+        boleto.deletar()
 
     def proximos_vencimentos(self, id_usuario):
-
-        conn = get_raw_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.callproc("sp_boletos_proximos_vencimento", [id_usuario])
-
-        resultado = []
-        for result in cursor.stored_results():
-            resultado.extend(result.fetchall())
-
-        cursor.close()
-        conn.close()
-
-        return resultado
+        sql = text("CALL sp_boletos_proximos_vencimento(:id_usuario)")
+        resultado = db.session.execute(sql, {"id_usuario": id_usuario})
+        linhas = resultado.mappings().all()
+        resultado.close()
+        return [dict(linha) for linha in linhas]
