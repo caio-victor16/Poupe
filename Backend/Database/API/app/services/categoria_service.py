@@ -1,8 +1,8 @@
 from app.repositories.categoria_repository import CategoriaRepository
+from app.models.categoria import Categoria
 
 
 class CategoriaService:
-
     def __init__(self):
         self.repository = CategoriaRepository()
 
@@ -13,11 +13,26 @@ class CategoriaService:
         categoria = self.repository.buscar_por_id(id_categoria)
         return categoria.to_dict() if categoria else None
 
-    def inserir(self, categoria):
-        self.repository.inserir(categoria)
+    def criar(self, dados):
+        if not dados.get("nome"):
+            raise ValueError("O campo 'nome' é obrigatório.")
 
-    def atualizar(self, categoria):
-        self.repository.atualizar(categoria)
+        categoria = Categoria(nome=dados["nome"])
+        self.repository.inserir(categoria)
+        return categoria.to_dict()
+
+    def atualizar(self, id_categoria, dados):
+        categoria = self.repository.buscar_por_id(id_categoria)
+        if categoria is None:
+            return None
+
+        self.repository.atualizar(categoria, dados)
+        return categoria.to_dict()
 
     def excluir(self, id_categoria):
-        self.repository.excluir(id_categoria)
+        categoria = self.repository.buscar_por_id(id_categoria)
+        if categoria is None:
+            return False
+
+        self.repository.excluir(categoria)
+        return True
