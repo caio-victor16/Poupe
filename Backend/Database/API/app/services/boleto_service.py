@@ -7,10 +7,11 @@ class BoletoService:
         self.repository = BoletoRepository()
 
     def listar(self):
-        return self.repository.listar()
+        return [b.to_dict() for b in self.repository.listar()]
 
     def buscar_por_id(self, id_boleto):
-        return self.repository.buscar_por_id(id_boleto)
+        boleto = self.repository.buscar_por_id(id_boleto)
+        return boleto.to_dict() if boleto else None
 
     def inserir(self, boleto):
         self.repository.inserir(boleto)
