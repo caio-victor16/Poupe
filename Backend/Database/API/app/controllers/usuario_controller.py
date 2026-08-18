@@ -84,7 +84,3 @@ def excluir(id_usuario):
     return jsonify({"mensagem": "usuário removido"})
 
 
-@usuario_bp.route("/usuarios/<int:id_usuario>/gastos-categoria", methods=["GET"])
-def gastos_categoria(id_usuario):
-
-    return jsonify(service.gastos_por_categoria(id_usuario))
