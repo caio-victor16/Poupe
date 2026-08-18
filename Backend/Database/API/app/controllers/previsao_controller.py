@@ -1,31 +1,14 @@
-from flask import Blueprint
-from flask import jsonify
+from flask import Blueprint, jsonify
 
 from app.services.previsao_service import PrevisaoService
 
-
-previsao_bp = Blueprint(
-    "previsao",
-    __name__
-)
-
+previsao_bp = Blueprint("previsao", __name__)
 service = PrevisaoService()
 
 
-@previsao_bp.route(
-    "/previsoes/usuario/<int:id_usuario>",
-    methods=["GET"]
-)
+@previsao_bp.get("/previsoes/usuario/<int:id_usuario>")
 def calcular(id_usuario):
-
-    resultado = service.calcular(
-        id_usuario
-    )
-
+    resultado = service.calcular(id_usuario)
     if resultado is None:
-
-        return jsonify({
-            "erro": "usuário não encontrado"
-        }), 404
-
-    return jsonify(resultado)
+        return jsonify({"erro": "Usuário não encontrado."}), 404
+    return jsonify(resultado), 200
