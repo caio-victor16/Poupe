@@ -1,31 +1,14 @@
-from flask import Blueprint
-from flask import jsonify
+from flask import Blueprint, jsonify
 
 from app.services.relatorio_service import RelatorioService
 
-
-relatorio_bp = Blueprint(
-    "relatorio",
-    __name__
-)
-
+relatorio_bp = Blueprint("relatorio", __name__)
 service = RelatorioService()
 
 
-@relatorio_bp.route(
-    "/relatorios/usuario/<int:id_usuario>",
-    methods=["GET"]
-)
+@relatorio_bp.get("/relatorios/usuario/<int:id_usuario>")
 def financeiro(id_usuario):
-
-    resultado = service.financeiro(
-        id_usuario
-    )
-
+    resultado = service.financeiro(id_usuario)
     if resultado is None:
-
-        return jsonify({
-            "erro": "usuário não encontrado"
-        }), 404
-
-    return jsonify(resultado)
+        return jsonify({"erro": "Usuário não encontrado."}), 404
+    return jsonify(resultado), 200
