@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poupe+ | Minhas Receitas</title>
+  <!-- Link para o CSS separado -->
+  <link rel="stylesheet" href="receitas.css">
+  <!-- Ícones do Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Menu Lateral -->
+<aside>
+<div class="brand-wrapper">
+<div class="brand">poupe+</div>
+<i data-lucide="menu" class="menu-icon"></i>
+</div>
+
+<nav class="nav-container">
+<ul class="nav-list">
+<li class="nav-item"><a href="inicio.html"><i data-lucide="home"></i> Início</a></li>
+<li class="nav-item active"><a href="gastos.html"><i data-lucide="calendar"></i> Gastos</a></li>
+<li class="nav-item"><a href="receitas.html"><i data-lucide="wallet"></i> Receitas</a></li>
+<li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i> Relatórios</a></li>
+<li class="nav-item"><a href="metas.html"><i data-lucide="target"></i> Metas</a></li>
+<li class="nav-item"><a href="alertas.html"><i data-lucide="bell"></i> Alertas</a></li>
+</ul>
+
+<ul class="nav-list nav-bottom">
+<li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i> Configurações</a></li>
+<li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i> Sair</a></li>
+</ul>
+</nav>
+</aside>
+
+
+
+  <!-- Conteúdo Principal -->
+  <main>
+    <div class="header">
+      <h1>Minhas receitas</h1>
+      <button class="btn-add" id="btnOpenModal">
+        <i data-lucide="plus"></i> Adicionar receita
+      </button>
+    </div>
+
+    <!-- Navegação de Mês -->
+    <div class="month-selector">
+      <button class="month-btn"><i data-lucide="chevron-left"></i></button>
+      <span class="current-month">Agosto de 2026</span>
+      <button class="month-btn"><i data-lucide="chevron-right"></i></button>
+    </div>
+
+    <!-- Card Resumo de Total -->
+    <div class="summary-card">
+      <span class="summary-label">Total de receitas</span>
+      <h2 class="summary-value" id="totalDisplay">R$ 0,00</h2>
+    </div>
+
+    <!-- Tabela de Receitas -->
+    <div class="table-card">
+      <table class="incomes-table">
+        <thead>
+          <tr>
+            <th>Descrição</th>
+            <th>Data</th>
+            <th>Categoria</th>
+            <th class="text-right">Valor</th>
+            <th class="action-header"></th>
+          </tr>
+        </thead>
+        <tbody id="incomesTableBody">
+          <!-- Gerado dinamicamente via JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer com Total -->
+    <div class="total-footer-card">
+      <span>Total de receitas</span>
+      <strong id="footerTotalDisplay">R$ 0,00</strong>
+    </div>
+  </main>
+
+  <!-- Modal Pop-up para Adicionar Receita -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <h2>Nova Receita</h2>
+      <form id="incomeForm">
+        <div class="form-group">
+          <label for="incomeDesc">Descrição</label>
+          <input type="text" id="incomeDesc" placeholder="Ex: Salário, Freelancer..." required>
+        </div>
+        <div class="form-group">
+          <label for="incomeCategory">Categoria</label>
+          <select id="incomeCategory" required>
+            <option value="" disabled selected>Selecione uma categoria</option>
+            <option value="Salário">Salário</option>
+            <option value="Trabalho">Trabalho</option>
+            <option value="Investimentos">Investimentos</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="incomeValue">Valor (R$)</label>
+          <input type="number" id="incomeValue" step="0.01" placeholder="Ex: 2500.00" required>
+        </div>
+        <div class="form-group">
+          <label for="incomeDate">Data</label>
+          <input type="date" id="incomeDate" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="btnCancelModal">Cancelar</button>
+          <button type="submit" class="btn-save">Salvar Receita</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+
+      const modal = document.getElementById('modal');
+      const btnOpenModal = document.getElementById('btnOpenModal');
+      const btnCancelModal = document.getElementById('btnCancelModal');
+      const incomeForm = document.getElementById('incomeForm');
+      const tableBody = document.getElementById('incomesTableBody');
+      const totalDisplay = document.getElementById('totalDisplay');
+      const footerTotalDisplay = document.getElementById('footerTotalDisplay');
+      const incomeDateInput = document.getElementById('incomeDate');
+
+      // Data padrão de hoje
+      incomeDateInput.value = new Date().toISOString().split('T')[0];
+
+      // Dados padrão para exemplo inicial
+      const defaultIncomes = [
+        { description: 'Salário', date: '2026-08-01', category: 'Salário', amount: 2800.00 },
+        { description: 'Freelancer', date: '2026-08-05', category: 'Trabalho', amount: 500.00 },
+        { description: 'Venda', date: '2026-08-10', category: 'Outros', amount: 250.00 }
+      ];
+
+      let incomes = JSON.parse(localStorage.getItem('poupePlus_incomes')) || defaultIncomes;
+
+      function formatMoney(val) {
+        return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
+      }
+
+      function renderIncomes() {
+        tableBody.innerHTML = '';
+        let total = 0;
+
+        if (incomes.length === 0) {
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="5" class="empty-msg">Nenhuma receita cadastrada neste mês.</td>
+            </tr>
+          `;
+        } else {
+          incomes.forEach((item, index) => {
+            total += Number(item.amount);
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="font-medium">${item.description}</td>
+              <td class="text-muted">${formatDate(item.date)}</td>
+              <td class="text-muted">${item.category}</td>
+              <td class="text-right font-bold">R$ ${formatMoney(item.amount)}</td>
+              <td class="action-cell">
+                <button class="delete-btn" data-index="${index}" title="Excluir">
+                  <i data-lucide="trash-2"></i>
+                </button>
+              </td>
+            `;
+            tableBody.appendChild(tr);
+          });
+        }
+
+        const formattedTotal = `R$ ${formatMoney(total)}`;
+        totalDisplay.innerText = formattedTotal;
+        footerTotalDisplay.innerText = formattedTotal;
+
+        lucide.createIcons();
+
+        // Botões de Deletar
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const idx = e.currentTarget.getAttribute('data-index');
+            deleteIncome(idx);
+          });
+        });
+      }
+
+      // Handlers de Modal
+      btnOpenModal.addEventListener('click', () => modal.classList.add('active'));
+      
+      function closeModal() {
+        modal.classList.remove('active');
+        incomeForm.reset();
+        incomeDateInput.value = new Date().toISOString().split('T')[0];
+      }
+
+      btnCancelModal.addEventListener('click', closeModal);
+
+      // Adicionar Receita
+      incomeForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const description = document.getElementById('incomeDesc').value;
+        const category = document.getElementById('incomeCategory').value;
+        const amount = parseFloat(document.getElementById('incomeValue').value);
+        const date = document.getElementById('incomeDate').value;
+
+        incomes.push({ description, category, amount, date });
+        localStorage.setItem('poupePlus_incomes', JSON.stringify(incomes));
+
+        closeModal();
+        renderIncomes();
+      });
+
+      function deleteIncome(index) {
+        if (confirm('Deseja remover esta receita?')) {
+          incomes.splice(index, 1);
+          localStorage.setItem('poupePlus_incomes', JSON.stringify(incomes));
+          renderIncomes();
+        }
+      }
+
+      renderIncomes();
+    });
+  </script>
+</body>
+</html>

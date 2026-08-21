@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poupe+ | Minhas Metas</title>
+  <!-- Link para o CSS externo -->
+  <link rel="stylesheet" href="metas.css">
+  <!-- Ícones do Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Menu Lateral -->
+<aside>
+<div class="brand-wrapper">
+<div class="brand">poupe+</div>
+<i data-lucide="menu" class="menu-icon"></i>
+</div>
+
+<nav class="nav-container">
+<ul class="nav-list">
+<li class="nav-item"><a href="inicio.html"><i data-lucide="home"></i> Início</a></li>
+<li class="nav-item active"><a href="gastos.html"><i data-lucide="calendar"></i> Gastos</a></li>
+<li class="nav-item"><a href="receitas.html"><i data-lucide="wallet"></i> Receitas</a></li>
+<li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i> Relatórios</a></li>
+<li class="nav-item"><a href="metas.html"><i data-lucide="target"></i> Metas</a></li>
+<li class="nav-item"><a href="alertas.html"><i data-lucide="bell"></i> Alertas</a></li>
+</ul>
+
+<ul class="nav-list nav-bottom">
+<li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i> Configurações</a></li>
+<li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i> Sair</a></li>
+</ul>
+</nav>
+</aside>
+
+  <!-- Conteúdo Principal -->
+  <main>
+    <div class="header">
+      <h1>Minhas metas</h1>
+      <button class="btn-add" onclick="openModal()">
+        <i data-lucide="plus"></i> Nova meta
+      </button>
+    </div>
+
+    <!-- Grid onde as metas entram dinamicamente -->
+    <div class="goals-grid" id="goalsGrid"></div>
+  </main>
+
+  <!-- Modal Pop-up para Adicionar Meta -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <h2>Criar nova meta</h2>
+      <form id="goalForm" onsubmit="saveGoal(event)">
+        <div class="form-group">
+          <label for="goalTitle">Nome da Meta</label>
+          <input type="text" id="goalTitle" placeholder="Ex: Viagem, Novo celular" required>
+        </div>
+        <div class="form-group">
+          <label for="targetValue">Valor Objetivo (R$)</label>
+          <input type="number" id="targetValue" step="0.01" placeholder="Ex: 5000.00" required>
+        </div>
+        <div class="form-group">
+          <label for="currentValue">Valor Já Guardado (R$)</label>
+          <input type="number" id="currentValue" step="0.01" placeholder="Ex: 1200.00" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
+          <button type="submit" class="btn-save">Salvar Meta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<script>
+  let goals = JSON.parse(localStorage.getItem('poupePlus_goals')) || [];
+  const goalsGrid = document.getElementById('goalsGrid');
+  const modal = document.getElementById('modal');
+
+  function renderGoals() {
+    if (!goalsGrid) return;
+    goalsGrid.innerHTML = '';
+
+    if (goals.length === 0) {
+      goalsGrid.innerHTML = `
+        <div class="empty-state">
+          <p>Você ainda não tem metas cadastradas.</p>
+          <p>Clique em <strong>"+ Nova meta"</strong> acima para criar a primeira!</p>
+        </div>
+      `;
+      return;
+    }
+
+    goals.forEach((goal, index) => {
+      const percentage = Math.min(Math.round((goal.current / goal.target) * 100), 100);
+      
+      const card = document.createElement('div');
+      card.className = 'goal-card';
+      card.innerHTML = `
+        <button class="delete-btn" onclick="deleteGoal(${index})" title="Excluir meta">
+          <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+        </button>
+        <div class="card-top">
+          <div>
+            <div class="goal-title">${goal.title}</div>
+            <div class="goal-value">R$ ${formatMoney(goal.target)}</div>
+          </div>
+          <div class="icon-wrapper">
+            <i data-lucide="piggy-bank"></i>
+          </div>
+        </div>
+        <div class="goal-subtext">
+          R$ ${formatMoney(goal.current)} / R$ ${formatMoney(goal.target)}
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${percentage}%"></div>
+          </div>
+          <div class="progress-percentage">${percentage}%</div>
+        </div>
+      `;
+      goalsGrid.appendChild(card);
+    });
+
+    // Renderiza os ícones do Lucide apenas se a biblioteca estiver disponível
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  }
+
+  function formatMoney(value) {
+    return Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function openModal() {
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeModal() {
+    if (modal) modal.classList.remove('active');
+    const form = document.getElementById('goalForm');
+    if (form) form.reset();
+  }
+
+  function saveGoal(e) {
+    e.preventDefault();
+    const title = document.getElementById('goalTitle').value;
+    const target = parseFloat(document.getElementById('targetValue').value) || 0;
+    const current = parseFloat(document.getElementById('currentValue').value) || 0;
+
+    goals.push({ title, target, current });
+    localStorage.setItem('poupePlus_goals', JSON.stringify(goals));
+
+    closeModal();
+    renderGoals();
+  }
+
+  function deleteGoal(index) {
+    if (confirm('Tem certeza que deseja apagar essa meta?')) {
+      goals.splice(index, 1);
+      localStorage.setItem('poupePlus_goals', JSON.stringify(goals));
+      renderGoals();
+    }
+  }
+
+  // Inicializa a página após o carregamento total do HTML
+  document.addEventListener('DOMContentLoaded', () => {
+    renderGoals();
+  });
+</script>
+  
+</body>
+</html>

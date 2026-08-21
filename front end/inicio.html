@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poupe+ | Início</title>
+  <!-- Link para o CSS separado -->
+  <link rel="stylesheet" href="inicio.css">
+  <!-- Ícones do Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js para o gráfico de Rosca e Linha -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+ <!-- Menu Lateral -->
+<aside>
+<div class="brand-wrapper">
+<div class="brand">poupe+</div>
+<i data-lucide="menu" class="menu-icon"></i>
+</div>
+
+<nav class="nav-container">
+<ul class="nav-list">
+<li class="nav-item"><a href="inicio.html"><i data-lucide="home"></i> Início</a></li>
+<li class="nav-item active"><a href="gastos.html"><i data-lucide="calendar"></i> Gastos</a></li>
+<li class="nav-item"><a href="receitas.html"><i data-lucide="wallet"></i> Receitas</a></li>
+<li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i> Relatórios</a></li>
+<li class="nav-item"><a href="metas.html"><i data-lucide="target"></i> Metas</a></li>
+<li class="nav-item"><a href="alertas.html"><i data-lucide="bell"></i> Alertas</a></li>
+</ul>
+
+<ul class="nav-list nav-bottom">
+<li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i> Configurações</a></li>
+<li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i> Sair</a></li>
+</ul>
+</nav>
+</aside>
+
+
+  <!-- Conteúdo Principal -->
+  <main>
+    <!-- Topo / Header da Página -->
+    <header class="top-bar">
+      <div class="user-greeting">
+        <h1>Olá, Duda! 👋</h1>
+        <div class="month-dropdown">
+          <span id="currentMonthYear">Agosto de 2026</span>
+          <i data-lucide="chevron-down"></i>
+        </div>
+      </div>
+
+      <div class="user-actions">
+        <button class="icon-btn" title="Notificações"><i data-lucide="bell"></i></button>
+        <div class="avatar-circle">D</div>
+      </div>
+    </header>
+
+    <!-- Grid do Dashboard -->
+    <div class="dashboard-grid">
+      
+      <!-- Coluna Esquerda: Card Verde + Últimos Gastos -->
+      <div class="grid-left">
+        
+        <!-- Card Grande Verde: Resumo do Mês -->
+        <div class="summary-card">
+          <h2>Resumo do mês</h2>
+          
+          <div class="summary-metrics">
+            <div class="metric">
+              <span class="label">Receitas</span>
+              <strong class="value" id="totalIncomes">R$ 0,00</strong>
+            </div>
+            <div class="metric">
+              <span class="label">Gastos</span>
+              <strong class="value" id="totalExpenses">R$ 0,00</strong>
+            </div>
+            <div class="metric">
+              <span class="label">Saldo disponível</span>
+              <strong class="value" id="balance">R$ 0,00</strong>
+            </div>
+          </div>
+
+          <div class="progress-container">
+            <div class="progress-info">
+              <span id="monthProgressText">30% do mês concluído</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="monthProgressBar" style="width: 30%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card: Últimos Gastos -->
+        <div class="recent-expenses-card">
+          <div class="card-title">
+            <h3>Últimos gastos</h3>
+          </div>
+          
+          <ul class="recent-expenses-list" id="recentExpensesList">
+            <!-- Inserido dinamicamente via Javascript -->
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Coluna Direita: Rosca de Gastos por Categoria + Gráfico de Linha -->
+      <div class="grid-right">
+
+        <!-- Card: Gastos por Categoria -->
+        <div class="chart-card">
+          <h3>Gastos por categoria</h3>
+          
+          <div class="donut-chart-wrapper">
+            <div class="canvas-container">
+              <canvas id="categoryChart"></canvas>
+              <div class="chart-center-text">
+                <strong id="donutTotalDisplay">R$ 0,00</strong>
+                <span>gastos totais</span>
+              </div>
+            </div>
+
+            <div class="chart-legend" id="chartLegend">
+              <!-- Legendas inseridas dinamicamente -->
+            </div>
+          </div>
+
+          <a href="index9.html" class="btn-full-report">Ver relatório completo</a>
+        </div>
+
+        <!-- Card: Evolução dos Gastos -->
+        <div class="chart-card">
+          <div class="card-header-flex">
+            <h3>Evolução dos gastos</h3>
+            <div class="mini-select">
+              <span>Agosto de 2026</span>
+              <i data-lucide="chevron-down"></i>
+            </div>
+          </div>
+          
+          <div class="line-chart-container">
+            <canvas id="evolutionChart"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+
+      // Mês e Ano padrão
+      const currentYear = 2026;
+      const currentMonth = 7; // Agosto (base 0)
+
+      // Cálculo do Progresso do Mês
+      const today = new Date();
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const currentDay = Math.min(today.getDate(), daysInMonth);
+      const percentMonth = Math.round((currentDay / daysInMonth) * 100);
+
+      document.getElementById('monthProgressText').innerText = `${percentMonth}% do mês concluído`;
+      document.getElementById('monthProgressBar').style.width = `${percentMonth}%`;
+
+      // 1. Carregar Dados de Receitas e Gastos
+      const defaultIncomes = [{ amount: 3500.00, date: '2026-08-01' }];
+      const defaultExpenses = [
+        { description: 'Mercado', category: 'Alimentação', date: '2026-08-18', amount: 120.50 },
+        { description: 'Uber', category: 'Transporte', date: '2026-08-17', amount: 26.90 },
+        { description: 'Shopee', category: 'Compras', date: '2026-08-17', amount: 89.90 },
+        { description: 'Cinema', category: 'Lazer', date: '2026-08-16', amount: 40.00 },
+        { description: 'Livro', category: 'Estudos', date: '2026-08-15', amount: 60.00 },
+        { description: 'Farmácia', category: 'Outros', date: '2026-08-13', amount: 35.40 }
+      ];
+
+      const expenses = JSON.parse(localStorage.getItem('poupePlus_expenses')) || defaultExpenses;
+      const incomes = JSON.parse(localStorage.getItem('poupePlus_incomes')) || defaultIncomes;
+
+      if (!localStorage.getItem('poupePlus_expenses')) {
+        localStorage.setItem('poupePlus_expenses', JSON.stringify(defaultExpenses));
+      }
+
+      // Funções de formatação
+      const formatMoney = (val) => Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const formatDateShort = (dateStr) => {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        return `${parts[2]}/${parts[1]}`;
+      };
+
+      // Cálculos do Resumo
+      const totalIncomesVal = incomes.reduce((acc, curr) => acc + Number(curr.amount), 0);
+      const totalExpensesVal = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
+      const balanceVal = totalIncomesVal - totalExpensesVal;
+
+      document.getElementById('totalIncomes').innerText = formatMoney(totalIncomesVal);
+      document.getElementById('totalExpenses').innerText = formatMoney(totalExpensesVal);
+      document.getElementById('balance').innerText = formatMoney(balanceVal);
+      document.getElementById('donutTotalDisplay').innerText = formatMoney(totalExpensesVal);
+
+      // Ícones e Cores por Categoria
+      const catConfig = {
+        'Alimentação': { icon: 'shopping-bag', color: '#10b981', bg: '#e6f4ea' },
+        'Transporte': { icon: 'navigation', color: '#0ea5e9', bg: '#e0f2fe' },
+        'Compras': { icon: 'shopping-cart', color: '#f97316', bg: '#ffedd5' },
+        'Lazer': { icon: 'film', color: '#8b5cf6', bg: '#f3e8ff' },
+        'Estudos': { icon: 'book-open', color: '#3b82f6', bg: '#dbeafe' },
+        'Saúde': { icon: 'activity', color: '#ef4444', bg: '#fee2e2' },
+        'Outros': { icon: 'tag', color: '#6b7280', bg: '#f3f4f6' }
+      };
+
+      // 2. Renderizar "Últimos Gastos"
+      const recentListEl = document.getElementById('recentExpensesList');
+      recentListEl.innerHTML = '';
+
+      expenses.slice(0, 5).forEach(item => {
+        const conf = catConfig[item.category] || catConfig['Outros'];
+        
+        const li = document.createElement('li');
+        li.className = 'expense-item';
+        li.innerHTML = `
+          <div class="expense-left">
+            <div class="icon-box" style="background-color: ${conf.bg}; color: ${conf.color};">
+              <i data-lucide="${conf.icon}"></i>
+            </div>
+            <div class="expense-info">
+              <strong>${item.category}</strong>
+              <span>${formatDateShort(item.date)} • ${item.description}</span>
+            </div>
+          </div>
+          <div class="expense-amount">
+            ${formatMoney(item.amount)}
+          </div>
+        `;
+        recentListEl.appendChild(li);
+      });
+      lucide.createIcons();
+
+      // 3. Preparar dados para o Gráfico de Rosca (Categorias)
+      const categoriesTotals = {};
+      expenses.forEach(e => {
+        categoriesTotals[e.category] = (categoriesTotals[e.category] || 0) + Number(e.amount);
+      });
+
+      const catLabels = Object.keys(categoriesTotals);
+      const catValues = Object.values(categoriesTotals);
+      const catColors = catLabels.map(cat => (catConfig[cat] ? catConfig[cat].color : '#6b7280'));
+
+      // Renderizar Legenda
+      const legendEl = document.getElementById('chartLegend');
+      legendEl.innerHTML = '';
+      catLabels.forEach((label, idx) => {
+        const val = catValues[idx];
+        const pct = totalExpensesVal > 0 ? Math.round((val / totalExpensesVal) * 100) : 0;
+        
+        const legItem = document.createElement('div');
+        legItem.className = 'legend-item';
+        legItem.innerHTML = `
+          <div class="legend-left">
+            <span class="dot" style="background-color: ${catColors[idx]}"></span>
+            <span class="legend-label">${label}</span>
+          </div>
+          <span class="legend-pct">${pct}%</span>
+        `;
+        legendEl.appendChild(legItem);
+      });
+
+      // Chart.js - Rosca
+      const ctxDonut = document.getElementById('categoryChart').getContext('2d');
+      new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: {
+          labels: catLabels,
+          datasets: [{
+            data: catValues,
+            backgroundColor: catColors,
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          cutout: '78%',
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: true }
+          },
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+
+      // 4. Chart.js - Evolução dos Gastos (Linha)
+      const ctxLine = document.getElementById('evolutionChart').getContext('2d');
+      new Chart(ctxLine, {
+        type: 'line',
+        data: {
+          labels: ['01/08', '08/08', '15/08', '22/08', '29/08'],
+          datasets: [{
+            data: [400, 700, 1100, 1300, 1650],
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.08)',
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: '#10b981',
+            pointRadius: 4
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false } },
+            y: { grid: { color: '#f0f0f0' }, min: 0 }
+          },
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    });
+  </script>
+</body>
+</html>
