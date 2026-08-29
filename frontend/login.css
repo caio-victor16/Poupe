@@ -1,0 +1,256 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #f4f6f8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-container {
+  display: flex;
+  width: 100%;
+  max-width: 900px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  min-height: 550px;
+}
+
+/* Painel Esquerdo */
+.brand-section {
+  flex: 1;
+  background-color: #0b3c26;
+  color: #ffffff;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.brand-logo {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.brand-logo span {
+  color: #4ade80;
+}
+
+.brand-headline {
+  font-size: 22px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: #e2e8f0;
+  max-width: 280px;
+  margin-top: 30px;
+}
+
+.brand-illustration {
+  align-self: center;
+  width: 80%;
+  max-width: 240px;
+  margin-top: auto;
+}
+
+/* Painel Direito */
+.form-section {
+  flex: 1;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.form-header {
+  margin-bottom: 24px;
+}
+
+.form-header h2 {
+  font-size: 22px;
+  color: #1e293b;
+  margin-bottom: 6px;
+}
+
+.form-header p {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.input-group {
+  margin-bottom: 16px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-wrapper input:focus {
+  border-color: #0b3c26;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+}
+
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  cursor: pointer;
+}
+
+.forgot-password {
+  color: #0b3c26;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 12px;
+  background-color: #0b3c26;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-submit:hover {
+  background-color: #082d1c;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.divider span {
+  padding: 0 10px;
+}
+
+.btn-google {
+  width: 100%;
+  padding: 10px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-google:hover {
+  background-color: #f8fafc;
+}
+
+.btn-google svg {
+  width: 18px;
+  height: 18px;
+}
+
+.signup-text {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.signup-text a {
+  color: #0b3c26;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.signup-text a:hover {
+  text-decoration: underline;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+    max-width: 450px;
+  }
+
+  .brand-section {
+    padding: 30px;
+  }
+
+  .brand-illustration {
+    display: none;
+  }
+
+  .form-section {
+    padding: 30px 24px;
+  }
+}
