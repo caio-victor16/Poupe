@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Poupe+ | Configurações</title>
+
+  <link rel="stylesheet" href="configuracao.css">
+<link rel="stylesheet" href="api.js">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+
+  <aside>
+
+    <div class="brand-wrapper">
+      <div class="brand">poupe+</div>
+      <i data-lucide="menu" class="menu-icon"></i>
+    </div>
+
+    <nav class="nav-container">
+
+      <ul class="nav-list">
+
+        <li class="nav-item">
+          <a href="inicio.html">
+            <i data-lucide="home"></i>
+            Início
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="gastos.html">
+            <i data-lucide="calendar"></i>
+            Gastos
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="receitas.html">
+            <i data-lucide="wallet"></i>
+            Receitas
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="relatorios.html">
+            <i data-lucide="bar-chart-3"></i>
+            Relatórios
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="metas.html">
+            <i data-lucide="target"></i>
+            Metas
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="alertas.html">
+            <i data-lucide="bell"></i>
+            Alertas
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="ia.html">
+            <i data-lucide="sparkles"></i>
+            IA Assistente
+          </a>
+        </li>
+
+      </ul>
+
+      <ul class="nav-list nav-bottom">
+
+        <li class="nav-item active">
+          <a href="configuracoes.html">
+            <i data-lucide="settings"></i>
+            Configurações
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="login.html">
+            <i data-lucide="log-out"></i>
+            Sair
+          </a>
+        </li>
+
+      </ul>
+
+    </nav>
+
+  </aside>
+
+  <main>
+
+    <div class="header">
+      <h1>Configurações</h1>
+    </div>
+
+    <div class="settings-grid">
+
+      <div class="settings-column">
+
+        <a href="#" class="setting-card" id="btn-perfil">
+          <div class="card-left">
+            <i data-lucide="user"></i>
+            <span>Perfil</span>
+          </div>
+          <i data-lucide="chevron-right" class="arrow-icon"></i>
+        </a>
+
+        <a href="#" class="setting-card" id="btn-categorias">
+          <div class="card-left">
+            <i data-lucide="folder"></i>
+            <span>Categorias</span>
+          </div>
+          <i data-lucide="chevron-right" class="arrow-icon"></i>
+        </a>
+
+        <a href="#" class="setting-card" id="btn-contas">
+          <div class="card-left">
+            <i data-lucide="landmark"></i>
+            <span>Contas bancárias</span>
+          </div>
+          <i data-lucide="chevron-right" class="arrow-icon"></i>
+        </a>
+
+        <a href="#" class="setting-card" id="btn-orcamento">
+          <div class="card-left">
+            <i data-lucide="calendar"></i>
+            <span>Orçamento mensal</span>
+          </div>
+          <i data-lucide="chevron-right" class="arrow-icon"></i>
+        </a>
+
+        <a href="#" class="setting-card" id="btn-notificacoes">
+          <div class="card-left">
+            <i data-lucide="bell"></i>
+            <span>Notificações</span>
+          </div>
+          <i data-lucide="chevron-right" class="arrow-icon"></i>
+        </a>
+
+      </div>
+
+      <div class="settings-column">
+
+        <a href="#" class="setting-card" id="btn-seguranca">
+          <div class="card-left">
+            <i data-lucide="lock"></i>
+            <span>Segurança</span>
+          </div>
+          <i data-lucide="chevron-right" class="arrow-icon"></i>
+        </a>
+
+        <div class="setting-card" id="toggle-theme">
+          <div class="card-left">
+            <i data-lucide="sliders"></i>
+            <span>Tema</span>
+          </div>
+          <div class="theme-value">
+            <span id="theme-text">Claro</span>
+            <i data-lucide="sun" id="theme-icon"></i>
+          </div>
+        </div>
+
+        <a href="#" class="setting-card" id="btn-sobre">
+          <div class="card-left">
+            <i data-lucide="info"></i>
+            <span>Sobre o Poupe+</span>
+          </div>
+          <i data-lucide="chevron-right" class="arrow-icon"></i>
+        </a>
+
+        <a href="login.html" class="setting-card logout-card">
+          <div class="card-left">
+            <i data-lucide="log-out"></i>
+            <span>Sair da conta</span>
+          </div>
+        </a>
+
+      </div>
+
+    </div>
+
+    <div id="config-panel" class="config-panel">
+
+      <div class="panel-header">
+        <div>
+          <span class="panel-category">CONFIGURAÇÕES</span>
+          <h2 id="panel-title"></h2>
+        </div>
+        <button id="close-panel" class="close-panel">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div id="panel-content"></div>
+
+    </div>
+
+  </main>
+
+  <script>
+    lucide.createIcons();
+
+    const panel = document.getElementById("config-panel");
+    const panelTitle = document.getElementById("panel-title");
+    const panelContent = document.getElementById("panel-content");
+    const closePanel = document.getElementById("close-panel");
+
+    function abrirPainel(titulo, conteudo) {
+      panelTitle.textContent = titulo;
+      panelContent.innerHTML = conteudo;
+
+      panel.classList.add("active");
+
+      lucide.createIcons();
+
+      panel.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }
+
+    closePanel.addEventListener("click", function() {
+      panel.classList.remove("active");
+    });
+
+    document.getElementById("btn-perfil").addEventListener("click", function(event) {
+      event.preventDefault();
+      abrirPainel("Perfil", `
+        <div class="panel-section">
+          <label>Nome</label>
+          <input type="text" class="panel-input" placeholder="Digite seu nome">
+        </div>
+        <div class="panel-section">
+          <label>E-mail</label>
+          <input type="email" class="panel-input" placeholder="seuemail@email.com">
+        </div>
+        <div class="panel-section">
+          <label>Telefone</label>
+          <input type="tel" class="panel-input" placeholder="(00) 00000-0000">
+        </div>
+        <button class="panel-button" onclick="salvarAlteracoes()">
+          Salvar alterações
+        </button>
+      `);
+    });
+
+    document.getElementById("btn-categorias").addEventListener("click", function(event) {
+      event.preventDefault();
+      abrirPainel("Categorias", `
+        <div class="panel-row">
+          <div class="panel-row-info">
+            <strong>🍔 Alimentação</strong>
+            <span>Restaurantes, mercado e lanches</span>
+          </div>
+          <button class="panel-button secondary">Editar</button>
+        </div>
+        <div class="panel-row">
+          <div class="panel-row-info">
+            <strong>🚗 Transporte</strong>
+            <span>Combustível, ônibus e aplicativos</span>
+          </div>
+          <button class="panel-button secondary">Editar</button>
+        </div>
+        <div class="panel-row">
+          <div class="panel-row-info">
+            <strong>🎮 Lazer</strong>
+            <span>Jogos, viagens e entretenimento</span>
+          </div>
+          <button class="panel-button secondary">Editar</button>
+        </div>
+        <button class="panel-button">+ Adicionar categoria</button>
+      `);
+    });
+
+    document.getElementById("btn-contas").addEventListener("click", function(event) {
+      event.preventDefault();
+      abrirPainel("Contas bancárias", `
+        <div class="panel-row">
+          <div class="panel-row-info">
+            <strong>Conta principal</strong>
+            <span>Banco principal</span>
+          </div>
+          <button class="panel-button secondary">Editar</button>
+        </div>
+        <div class="panel-row">
+          <div class="panel-row-info">
+            <strong>Carteira</strong>
+            <span>Dinheiro em espécie</span>
+          </div>
+          <button class="panel-button secondary">Editar</button>
+        </div>
+        <button class="panel-button">+ Adicionar conta</button>
+      `);
+    });
+
+    document.getElementById("btn-orcamento").addEventListener("click", function(event) {
+      event.preventDefault();
+      abrirPainel("Orçamento mensal", `
+        <div class="panel-section">
+          <label>Limite de gastos mensal</label>
+          <input type="number" class="panel-input" placeholder="R$ 0,00">
+        </div>
+        <div class="panel-section">
+          <label>Categoria principal</label>
+          <select class="panel-input">
+            <option>Alimentação</option>
+            <option>Transporte</option>
+            <option>Lazer</option>
+            <option>Casa</option>
+            <option>Outros</option>
+          </select>
+        </div>
+        <button class="panel-button" onclick="salvarAlteracoes()">
+          Salvar orçamento
+        </button>
+      `);
+    });
+
+    document.getElementById("btn-notificacoes").addEventListener("click", function(event) {
+      event.preventDefault();
+      abrirPainel("Notificações", `
+        <div class="panel-row">
+          <div class="panel-row-info">
+            <strong>Alertas de gastos</strong>
+            <span>Receber avisos sobre seus gastos.</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="panel-row">
+          <div class="panel-row-info">
+            <strong>Metas financeiras</strong>
+            <span>Receber lembretes sobre suas metas.</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="panel-row">
+          <div class="panel-row-info">
+            <strong>Resumo mensal</strong>
+            <span>Receber um resumo dos seus gastos.</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </div>
+      `);
+    });
+
+    document.getElementById("btn-seguranca").addEventListener("click", function(event) {
+      event.preventDefault();
+      abrirPainel("Segurança", `
+        <div class="panel-section">
+          <label>Senha atual</label>
+          <input type="password" class="panel-input" placeholder="Digite sua senha atual">
+        </div>
+        <div class="panel-section">
+          <label>Nova senha</label>
+          <input type="password" class="panel-input" placeholder="Digite sua nova senha">
+        </div>
+        <div class="panel-section">
+          <label>Confirmar nova senha</label>
+          <input type="password" class="panel-input" placeholder="Confirme sua nova senha">
+        </div>
+        <button class="panel-button" onclick="alterarSenha()">
+          Alterar senha
+        </button>
+      `);
+    });
+
+    document.getElementById("btn-sobre").addEventListener("click", function(event) {
+      event.preventDefault();
+      abrirPainel("Sobre o Poupe+", `
+        <div class="about-box">
+          <div class="about-icon">
+            <i data-lucide="wallet"></i>
+          </div>
+          <h3>Poupe+</h3>
+          <p>
+            O Poupe+ é uma plataforma criada para ajudar
+            você a organizar seus gastos e controlar sua
+            vida financeira de forma simples e prática.
+          </p>
+          <div class="about-version">
+            Versão 1.0.0
+          </div>
+        </div>
+      `);
+    });
+
+    const themeButton = document.getElementById("toggle-theme");
+    const themeText = document.getElementById("theme-text");
+    const themeIcon = document.getElementById("theme-icon");
+
+    function atualizarTema() {
+      if (document.body.classList.contains("dark-mode")) {
+        themeText.textContent = "Escuro";
+        themeIcon.setAttribute("data-lucide", "moon");
+      } else {
+        themeText.textContent = "Claro";
+        themeIcon.setAttribute("data-lucide", "sun");
+      }
+      lucide.createIcons();
+    }
+
+    if (localStorage.getItem("poupe-theme") === "dark") {
+      document.body.classList.add("dark-mode");
+    }
+
+    atualizarTema();
+
+    themeButton.addEventListener("click", function() {
+      document.body.classList.toggle("dark-mode");
+
+      if (document.body.classList.contains("dark-mode")) {
+        localStorage.setItem("poupe-theme", "dark");
+      } else {
+        localStorage.setItem("poupe-theme", "light");
+      }
+
+      atualizarTema();
+    });
+
+    function salvarAlteracoes() {
+      alert("Alterações salvas com sucesso!");
+    }
+
+    function alterarSenha() {
+      alert("Senha alterada com sucesso!");
+    }
+
+  if (localStorage.getItem("poupe-theme") === "dark") {
+    document.body.classList.add("dark-mode");
+  }
+
+  </script>
+
+</body>
+</html>

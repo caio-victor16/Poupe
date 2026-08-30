@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poupe+ | Relatórios</title>
+
+  <!-- Arquivo de Estilos CSS -->
+  <link rel="stylesheet" href="relatorios.css">
+
+  <!-- Lucide Icons & Chart.js -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<!-- Menu Lateral -->
+<aside>
+  <div class="brand-wrapper">
+    <div class="brand">poupe+</div>
+    <i data-lucide="menu" class="menu-icon"></i>
+  </div>
+
+  <nav class="nav-container">
+    <ul class="nav-list">
+      <li class="nav-item"><a href="inicio.html"><i data-lucide="home"></i> Início</a></li>
+      <li class="nav-item"><a href="gastos.html"><i data-lucide="calendar"></i> Gastos</a></li>
+      <li class="nav-item"><a href="receitas.html"><i data-lucide="wallet"></i> Receitas</a></li>
+      <li class="nav-item active"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i> Relatórios</a></li>
+      <li class="nav-item"><a href="metas.html"><i data-lucide="target"></i> Metas</a></li>
+      <li class="nav-item"><a href="alertas.html"><i data-lucide="bell"></i> Alertas</a></li>
+      <li class="nav-item"><a href="ia.html"><i data-lucide="sparkles"></i> IA Assistente</a></li>
+    </ul>
+
+    <ul class="nav-list nav-bottom">
+      <li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i> Configurações</a></li>
+      <li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i> Sair</a></li>
+    </ul>
+  </nav>
+</aside>
+
+<!-- Conteúdo Principal -->
+<main>
+
+  <div class="page-header">
+    <h1>Relatórios Financeiros</h1>
+
+    <!-- Seletor de Mês -->
+    <div class="month-selector">
+      <button class="month-btn" id="prevMonth" type="button" title="Mês anterior">
+        <i data-lucide="chevron-left"></i>
+      </button>
+
+      <div class="month-picker-wrapper">
+        <input type="month" id="monthPicker" title="Escolher mês">
+      </div>
+
+      <button class="month-btn" id="nextMonth" type="button" title="Próximo mês">
+        <i data-lucide="chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Cards de Resumo -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-title">Total de Receitas</span>
+      <div class="stat-value stat-receitas" id="statReceitas">R$ 0,00</div>
+      <span class="stat-sub">Entradas do mês</span>
+    </div>
+
+    <div class="stat-card">
+      <span class="stat-title">Total de Gastos</span>
+      <div class="stat-value stat-gastos" id="statGastos">R$ 0,00</div>
+      <span class="stat-sub">Saídas do mês</span>
+    </div>
+
+    <div class="stat-card">
+      <span class="stat-title">Saldo Líquido</span>
+      <div class="stat-value" id="statSaldo">R$ 0,00</div>
+      <span class="stat-sub">Receitas - Gastos</span>
+    </div>
+
+    <div class="stat-card">
+      <span class="stat-title">Maior Categoria</span>
+      <div class="stat-value stat-category" id="statMaiorCat">-</div>
+      <span class="stat-sub" id="statMaiorCatValor">R$ 0,00</span>
+    </div>
+  </div>
+
+  <!-- Gráficos -->
+  <div class="charts-grid">
+    <!-- Gráfico de Rosca: Gastos por Categoria -->
+    <div class="chart-card">
+      <h3>Gastos por Categoria</h3>
+      <div class="chart-container">
+        <canvas id="categoryChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Gráfico de Barras: Comparativo Receitas x Gastos -->
+    <div class="chart-card">
+      <h3>Receitas vs Gastos</h3>
+      <div class="chart-container">
+        <canvas id="balanceChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+
+  // Elementos do DOM
+  const monthPicker = document.getElementById('monthPicker');
+  const prevMonth = document.getElementById('prevMonth');
+  const nextMonth = document.getElementById('nextMonth');
+
+  const statReceitas = document.getElementById('statReceitas');
+  const statGastos = document.getElementById('statGastos');
+  const statSaldo = document.getElementById('statSaldo');
+  const statMaiorCat = document.getElementById('statMaiorCat');
+  const statMaiorCatValor = document.getElementById('statMaiorCatValor');
+
+  // Variável da Data
+  let selectedDate = new Date();
+  
+  // Instâncias dos Gráficos Chart.js
+  let categoryChartInstance = null;
+  let balanceChartInstance = null;
+
+  // Atualizar campo tipo Mês (YYYY-MM)
+  function updateMonthPicker() {
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    monthPicker.value = `${year}-${month}`;
+  }
+
+  // Formatação de Moeda
+  function formatMoney(value) {
+    return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  // Buscar Gastos do localStorage
+  function getGastos() {
+    try {
+      return JSON.parse(localStorage.getItem('poupe_gastos')) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  // Buscar Receitas do localStorage
+  function getReceitas() {
+    try {
+      return JSON.parse(localStorage.getItem('poupePlus_incomes')) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  // Renderizar a Página / Recalcular tudo baseado no Mês Selecionado
+  function renderReport() {
+    const targetMonth = selectedDate.getMonth();
+    const targetYear = selectedDate.getFullYear();
+
+    // 1. Filtrar Gastos do Mês
+    const gastos = getGastos().filter(item => {
+      if (!item.data) return false;
+      const [year, month] = item.data.split('-').map(Number);
+      return year === targetYear && (month - 1) === targetMonth;
+    });
+
+    // 2. Filtrar Receitas do Mês
+    const receitas = getReceitas().filter(item => {
+      if (!item.date) return false;
+      const [year, month] = item.date.split('-').map(Number);
+      return year === targetYear && (month - 1) === targetMonth;
+    });
+
+    // 3. Totais Principais
+    const totalGastos = gastos.reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
+    const totalReceitas = receitas.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    const saldo = totalReceitas - totalGastos;
+
+    statGastos.textContent = formatMoney(totalGastos);
+    statReceitas.textContent = formatMoney(totalReceitas);
+    statSaldo.textContent = formatMoney(saldo);
+    statSaldo.style.color = saldo >= 0 ? '#024731' : '#dc2626';
+
+    // 4. Agrupar Gastos por Categoria
+    const categorias = {};
+    gastos.forEach(gasto => {
+      const cat = gasto.categoria || 'Outros';
+      const val = Number(gasto.valor || 0);
+      categorias[cat] = (categorias[cat] || 0) + val;
+    });
+
+    // Identificar Maior Categoria de Gasto
+    let maiorCat = '-';
+    let maiorValor = 0;
+    Object.entries(categorias).forEach(([cat, val]) => {
+      if (val > maiorValor) {
+        maiorValor = val;
+        maiorCat = cat;
+      }
+    });
+
+    statMaiorCat.textContent = maiorCat;
+    statMaiorCatValor.textContent = formatMoney(maiorValor);
+
+    // 5. Atualizar Gráfico 1: Categorias de Gastos (Donut Chart)
+    const catLabels = Object.keys(categorias);
+    const catValues = Object.values(categorias);
+
+    if (categoryChartInstance) categoryChartInstance.destroy();
+
+    const ctxCat = document.getElementById('categoryChart').getContext('2d');
+    categoryChartInstance = new Chart(ctxCat, {
+      type: 'doughnut',
+      data: {
+        labels: catLabels.length ? catLabels : ['Sem Gastos'],
+        datasets: [{
+          data: catValues.length ? catValues : [1],
+          backgroundColor: catValues.length 
+            ? ['#024731', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#64748b']
+            : ['#e2e8f0']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right' }
+        }
+      }
+    });
+
+    // 6. Atualizar Gráfico 2: Receitas vs Gastos (Bar Chart)
+    if (balanceChartInstance) balanceChartInstance.destroy();
+
+    const ctxBal = document.getElementById('balanceChart').getContext('2d');
+    balanceChartInstance = new Chart(ctxBal, {
+      type: 'bar',
+      data: {
+        labels: ['Receitas', 'Gastos'],
+        datasets: [{
+          label: 'Valor (R$)',
+          data: [totalReceitas, totalGastos],
+          backgroundColor: ['#10b981', '#ef4444']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  // Eventos de Navegação no Mês
+  prevMonth.addEventListener('click', () => {
+    selectedDate.setMonth(selectedDate.getMonth() - 1);
+    updateMonthPicker();
+    renderReport();
+  });
+
+  nextMonth.addEventListener('click', () => {
+    selectedDate.setMonth(selectedDate.getMonth() + 1);
+    updateMonthPicker();
+    renderReport();
+  });
+
+  monthPicker.addEventListener('change', () => {
+    if (!monthPicker.value) return;
+    const [year, month] = monthPicker.value.split('-');
+    selectedDate = new Date(Number(year), Number(month) - 1, 1);
+    renderReport();
+  });
+
+  // Inicialização
+  updateMonthPicker();
+  renderReport();
+});
+if (localStorage.getItem("poupe-theme") === "dark") {
+    document.body.classList.add("dark-mode");
+  }
+</script>
+
+</body>
+</html>

@@ -1,5 +1,43 @@
 const API_URL = 'http://127.0.0.1:5000';
+const themeButton = document.getElementById("toggle-theme");
+const themeText = document.getElementById("theme-text");
+const themeIcon = document.getElementById("theme-icon");
 
+function atualizarTema() {
+  if (document.body.classList.contains("dark-mode")) {
+    if (themeText) themeText.textContent = "Escuro";
+    if (themeIcon) themeIcon.setAttribute("data-lucide", "moon");
+  } else {
+    if (themeText) themeText.textContent = "Claro";
+    if (themeIcon) themeIcon.setAttribute("data-lucide", "sun");
+  }
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+// Verifica e aplica o tema salvo no localStorage
+if (localStorage.getItem("poupe-theme") === "dark") {
+  document.body.classList.add("dark-mode");
+} else {
+  document.body.classList.remove("dark-mode");
+}
+
+atualizarTema();
+
+if (themeButton) {
+  themeButton.addEventListener("click", function () {
+    document.body.classList.toggle("dark-mode");
+
+    if (document.body.classList.contains("dark-mode")) {
+      localStorage.setItem("poupe-theme", "dark");
+    } else {
+      localStorage.setItem("poupe-theme", "light");
+    }
+
+    atualizarTema();
+  });
+}
 // Função auxiliar genérica para chamadas HTTP
 async function requisicao(endpoint, metodo = 'GET', dados = null) {
   const config = {

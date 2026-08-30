@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
+>
+
+<title>Poupe+ | Gastos</title>
+
+<link
+rel="stylesheet"
+href="gastos.css"
+>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+MENU LATERAL
+========================== -->
+
+<aside>
+
+<div class="brand-wrapper">
+
+<div class="brand">
+poupe+
+</div>
+
+<i
+data-lucide="menu"
+class="menu-icon"
+></i>
+
+</div>
+
+
+<nav class="nav-container">
+
+<ul class="nav-list">
+
+<li class="nav-item">
+<a href="inicio.html">
+<i data-lucide="home"></i>
+Início
+</a>
+</li>
+
+
+<li class="nav-item active">
+<a href="gastos.html">
+<i data-lucide="calendar"></i>
+Gastos
+</a>
+</li>
+
+
+<li class="nav-item">
+<a href="receitas.html">
+<i data-lucide="wallet"></i>
+Receitas
+</a>
+</li>
+
+
+<li class="nav-item">
+<a href="relatorios.html">
+<i data-lucide="bar-chart-3"></i>
+Relatórios
+</a>
+</li>
+
+
+<li class="nav-item">
+<a href="metas.html">
+<i data-lucide="target"></i>
+Metas
+</a>
+</li>
+
+
+<li class="nav-item">
+<a href="alertas.html">
+<i data-lucide="bell"></i>
+Alertas
+</a>
+</li>
+
+
+<li class="nav-item">
+<a href="ia.html">
+<i data-lucide="sparkles"></i>
+IA Assistente
+</a>
+</li>
+
+</ul>
+
+
+<ul class="nav-list nav-bottom">
+
+<li class="nav-item">
+
+<a href="configuracoes.html">
+
+<i data-lucide="settings"></i>
+
+Configurações
+
+</a>
+
+</li>
+
+
+<li class="nav-item">
+
+<a href="login.html">
+
+<i data-lucide="log-out"></i>
+
+Sair
+
+</a>
+
+</li>
+
+</ul>
+
+</nav>
+
+</aside>
+
+
+
+<!-- =========================
+ÁREA PRINCIPAL
+========================== -->
+
+<main>
+
+
+<!-- =========================
+LISTA DE GASTOS
+========================== -->
+
+<div id="listView">
+
+
+<div class="header">
+
+<h1>
+Meus gastos
+</h1>
+
+
+<div class="header-actions">
+
+<button
+class="btn-filter"
+id="btnFilter"
+type="button"
+>
+
+<i data-lucide="filter"></i>
+
+Filtrar
+
+</button>
+
+
+<button
+class="btn-add"
+id="btnShowAddForm"
+type="button"
+>
+
+<i data-lucide="plus"></i>
+
+Adicionar gasto
+
+</button>
+
+</div>
+
+</div>
+
+
+
+<!-- =========================
+CALENDÁRIO
+========================== -->
+
+<div class="month-selector">
+
+<button
+class="month-btn"
+id="prevMonth"
+type="button"
+>
+
+<i data-lucide="chevron-left"></i>
+
+</button>
+
+
+<span
+class="current-month"
+id="monthDisplay"
+></span>
+
+
+<button
+class="month-btn"
+id="nextMonth"
+type="button"
+>
+
+<i data-lucide="chevron-right"></i>
+
+</button>
+
+</div>
+
+
+
+<!-- =========================
+FILTROS
+========================== -->
+
+<div
+class="category-tabs"
+id="categoryTabs"
+>
+
+<button
+class="tab-btn active"
+data-cat="Todos"
+type="button"
+>
+Todos
+</button>
+
+
+<button
+class="tab-btn"
+data-cat="Alimentação"
+type="button"
+>
+Alimentação
+</button>
+
+
+<button
+class="tab-btn"
+data-cat="Transporte"
+type="button"
+>
+Transporte
+</button>
+
+
+<button
+class="tab-btn"
+data-cat="Compras"
+type="button"
+>
+Compras
+</button>
+
+
+<button
+class="tab-btn"
+data-cat="Lazer"
+type="button"
+>
+Lazer
+</button>
+
+
+<button
+class="tab-btn"
+data-cat="Estudos"
+type="button"
+>
+Estudos
+</button>
+
+
+<button
+class="tab-btn"
+data-cat="Saúde"
+type="button"
+>
+Saúde
+</button>
+
+
+<button
+class="tab-btn"
+data-cat="Outros"
+type="button"
+>
+Outros
+</button>
+
+</div>
+
+
+
+<!-- =========================
+LISTA
+========================== -->
+
+<div id="expensesList"></div>
+
+</div>
+
+
+
+<!-- =========================
+FORMULÁRIO
+========================== -->
+
+<div
+id="formView"
+class="hidden"
+>
+
+
+<div class="form-header">
+
+
+<button
+type="button"
+class="btn-back"
+id="btnHideAddForm"
+>
+
+<i data-lucide="arrow-left"></i>
+
+Voltar para a lista
+
+</button>
+
+
+<h1>
+Adicionar novo gasto
+</h1>
+
+
+</div>
+
+
+
+<div class="form-card">
+
+
+<form id="formGasto">
+
+
+<!-- DESCRIÇÃO -->
+
+<div class="form-group">
+
+<label for="descricao">
+Descrição
+</label>
+
+
+<input
+type="text"
+id="descricao"
+placeholder="Ex: Supermercado, Uber..."
+required
+>
+
+</div>
+
+
+
+<!-- VALOR -->
+
+<div class="form-group">
+
+<label for="valor">
+Valor (R$)
+</label>
+
+
+<input
+type="number"
+id="valor"
+step="0.01"
+min="0.01"
+placeholder="0,00"
+required
+>
+
+</div>
+
+
+
+<!-- CATEGORIA -->
+
+<div class="form-group">
+
+<label for="categoria">
+Categoria
+</label>
+
+
+<div class="select-wrapper">
+
+<select
+id="categoria"
+required
+>
+
+<option value="">
+Selecione uma categoria
+</option>
+
+
+<option value="Alimentação">
+Alimentação
+</option>
+
+
+<option value="Transporte">
+Transporte
+</option>
+
+
+<option value="Compras">
+Compras
+</option>
+
+
+<option value="Lazer">
+Lazer
+</option>
+
+
+<option value="Estudos">
+Estudos
+</option>
+
+
+<option value="Saúde">
+Saúde
+</option>
+
+
+<option value="Outros">
+Outros
+</option>
+
+</select>
+
+
+<i
+data-lucide="chevron-down"
+class="select-icon"
+></i>
+
+</div>
+
+</div>
+
+
+
+<!-- DATA -->
+
+<div class="form-group">
+
+<label for="data">
+Data do gasto
+</label>
+
+
+<input
+type="date"
+id="data"
+required
+>
+
+</div>
+
+
+
+<!-- BOTÃO -->
+
+<button
+type="submit"
+class="btn-submit-large"
+id="btnSalvarGasto"
+>
+
+Salvar gasto
+
+</button>
+
+
+</form>
+
+</div>
+
+</div>
+
+
+</main>
+
+
+
+<script>
+
+document.addEventListener(
+"DOMContentLoaded",
+function () {
+
+
+/* =========================
+ÍCONES
+========================== */
+
+lucide.createIcons();
+
+
+
+/* =========================
+ELEMENTOS
+========================== */
+
+const listView =
+document.getElementById(
+"listView"
+);
+
+
+const formView =
+document.getElementById(
+"formView"
+);
+
+
+const btnShowAddForm =
+document.getElementById(
+"btnShowAddForm"
+);
+
+
+const btnHideAddForm =
+document.getElementById(
+"btnHideAddForm"
+);
+
+
+const formGasto =
+document.getElementById(
+"formGasto"
+);
+
+
+const dataInput =
+document.getElementById(
+"data"
+);
+
+
+const descricaoInput =
+document.getElementById(
+"descricao"
+);
+
+
+const valorInput =
+document.getElementById(
+"valor"
+);
+
+
+const categoriaInput =
+document.getElementById(
+"categoria"
+);
+
+
+const expensesList =
+document.getElementById(
+"expensesList"
+);
+
+
+const monthDisplay =
+document.getElementById(
+"monthDisplay"
+);
+
+
+const prevMonth =
+document.getElementById(
+"prevMonth"
+);
+
+
+const nextMonth =
+document.getElementById(
+"nextMonth"
+);
+
+
+const categoryTabs =
+document.querySelectorAll(
+".tab-btn"
+);
+
+
+
+/* =========================
+DATA ATUAL
+========================== */
+
+const hoje =
+new Date();
+
+
+let mesSelecionado =
+hoje.getMonth();
+
+
+let anoSelecionado =
+hoje.getFullYear();
+
+
+let categoriaSelecionada =
+"Todos";
+
+
+
+/* =========================
+BANCO LOCAL DOS GASTOS
+========================== */
+
+function pegarGastos() {
+
+const dados =
+localStorage.getItem(
+"poupe_gastos"
+);
+
+
+if (!dados) {
+
+return [];
+
+}
+
+
+try {
+
+const gastos =
+JSON.parse(
+dados
+);
+
+
+return Array.isArray(
+gastos
+)
+? gastos
+: [];
+
+} catch (erro) {
+
+console.error(
+erro
+);
+
+return [];
+
+}
+
+}
+
+
+
+function salvarGastos(
+gastos
+) {
+
+localStorage.setItem(
+"poupe_gastos",
+JSON.stringify(
+gastos
+)
+);
+
+}
+
+
+
+/* =========================
+DATA DE HOJE
+========================== */
+
+function dataHoje() {
+
+const agora =
+new Date();
+
+
+const ano =
+agora.getFullYear();
+
+
+const mes =
+String(
+agora.getMonth() + 1
+).padStart(
+2,
+"0"
+);
+
+
+const dia =
+String(
+agora.getDate()
+).padStart(
+2,
+"0"
+);
+
+
+return `${ano}-${mes}-${dia}`;
+
+}
+
+
+
+/* =========================
+COLOCAR DATA NO FORM
+========================== */
+
+dataInput.value =
+dataHoje();
+
+
+
+/* =========================
+ABRIR FORM
+========================== */
+
+btnShowAddForm.addEventListener(
+"click",
+function () {
+
+listView.classList.add(
+"hidden"
+);
+
+
+formView.classList.remove(
+"hidden"
+);
+
+
+dataInput.value =
+dataHoje();
+
+
+descricaoInput.focus();
+
+
+lucide.createIcons();
+
+}
+);
+
+
+
+/* =========================
+VOLTAR
+========================== */
+
+btnHideAddForm.addEventListener(
+"click",
+function () {
+
+formView.classList.add(
+"hidden"
+);
+
+
+listView.classList.remove(
+"hidden"
+);
+
+}
+);
+
+
+
+/* =========================
+NOME DO MÊS
+========================== */
+
+function atualizarMes() {
+
+const meses = [
+
+"Janeiro",
+"Fevereiro",
+"Março",
+"Abril",
+"Maio",
+"Junho",
+"Julho",
+"Agosto",
+"Setembro",
+"Outubro",
+"Novembro",
+"Dezembro"
+
+];
+
+
+monthDisplay.textContent =
+`${meses[mesSelecionado]} de ${anoSelecionado}`;
+
+
+atualizarBotoes();
+
+
+renderizarGastos();
+
+}
+
+
+
+/* =========================
+BOTÕES DO CALENDÁRIO
+========================== */
+
+function atualizarBotoes() {
+
+const mesAtual =
+hoje.getMonth();
+
+
+const anoAtual =
+hoje.getFullYear();
+
+
+const estaNoMesAtualOuFuturo =
+(
+anoSelecionado >
+anoAtual
+) ||
+(
+anoSelecionado ===
+anoAtual &&
+mesSelecionado >=
+mesAtual
+);
+
+
+if (
+estaNoMesAtualOuFuturo
+) {
+
+nextMonth.disabled =
+true;
+
+nextMonth.style.opacity =
+"0.4";
+
+} else {
+
+nextMonth.disabled =
+false;
+
+nextMonth.style.opacity =
+"1";
+
+}
+
+}
+
+
+
+/* =========================
+MÊS ANTERIOR
+========================== */
+
+prevMonth.addEventListener(
+"click",
+function () {
+
+mesSelecionado--;
+
+
+if (
+mesSelecionado < 0
+) {
+
+mesSelecionado =
+11;
+
+anoSelecionado--;
+
+}
+
+
+atualizarMes();
+
+}
+);
+
+
+
+/* =========================
+PRÓXIMO MÊS
+========================== */
+
+nextMonth.addEventListener(
+"click",
+function () {
+
+const mesAtual =
+hoje.getMonth();
+
+
+const anoAtual =
+hoje.getFullYear();
+
+
+if (
+anoSelecionado >
+anoAtual ||
+(
+anoSelecionado ===
+anoAtual &&
+mesSelecionado >=
+mesAtual
+)
+) {
+
+return;
+
+}
+
+
+mesSelecionado++;
+
+
+if (
+mesSelecionado > 11
+) {
+
+mesSelecionado =
+0;
+
+anoSelecionado++;
+
+}
+
+
+atualizarMes();
+
+}
+);
+
+
+
+/* =========================
+FILTROS
+========================== */
+
+categoryTabs.forEach(
+function (botao) {
+
+botao.addEventListener(
+"click",
+function () {
+
+
+categoryTabs.forEach(
+function (item) {
+
+item.classList.remove(
+"active"
+);
+
+}
+);
+
+
+botao.classList.add(
+"active"
+);
+
+
+categoriaSelecionada =
+botao.dataset.cat;
+
+
+renderizarGastos();
+
+}
+);
+
+}
+);
+
+
+
+/* =========================
+VERIFICAR DATA
+========================== */
+
+function pertenceAoMes(
+gasto
+) {
+
+if (!gasto.data) {
+
+return false;
+
+}
+
+
+const partes =
+gasto.data.split(
+"-"
+);
+
+
+if (
+partes.length !== 3
+) {
+
+return false;
+
+}
+
+
+const ano =
+Number(
+partes[0]
+);
+
+
+const mes =
+Number(
+partes[1]
+) - 1;
+
+
+return (
+ano ===
+anoSelecionado &&
+mes ===
+mesSelecionado
+);
+
+}
+
+
+
+/* =========================
+FORMATAÇÃO
+========================== */
+
+function formatarData(
+data
+) {
+
+if (!data) {
+
+return "";
+
+}
+
+
+const partes =
+data.split(
+"-"
+);
+
+
+if (
+partes.length !== 3
+) {
+
+return data;
+
+}
+
+
+return `${partes[2]}/${partes[1]}/${partes[0]}`;
+
+}
+
+
+
+function formatarValor(
+valor
+) {
+
+return Number(
+valor
+).toLocaleString(
+"pt-BR",
+{
+style: "currency",
+currency: "BRL"
+}
+);
+
+}
+
+
+
+/* =========================
+ÍCONE DA CATEGORIA
+========================== */
+
+function iconeCategoria(
+categoria
+) {
+
+const icones = {
+
+"Alimentação":
+"utensils",
+
+"Transporte":
+"car",
+
+"Compras":
+"shopping-bag",
+
+"Lazer":
+"gamepad-2",
+
+"Estudos":
+"book-open",
+
+"Saúde":
+"heart-pulse",
+
+"Outros":
+"ellipsis"
+
+};
+
+
+return (
+icones[categoria] ||
+"circle"
+);
+
+}
+
+
+
+/* =========================
+RENDERIZAR GASTOS
+========================== */
+
+function renderizarGastos() {
+
+const todosGastos =
+pegarGastos();
+
+
+let gastosDoMes =
+todosGastos.filter(
+function (gasto) {
+
+return pertenceAoMes(
+gasto
+);
+
+}
+);
+
+
+if (
+categoriaSelecionada !==
+"Todos"
+) {
+
+gastosDoMes =
+gastosDoMes.filter(
+function (gasto) {
+
+return (
+gasto.categoria ===
+categoriaSelecionada
+);
+
+}
+);
+
+}
+
+
+gastosDoMes.sort(
+function (a, b) {
+
+return b.data.localeCompare(
+a.data
+);
+
+}
+);
+
+
+if (
+gastosDoMes.length ===
+0
+) {
+
+expensesList.innerHTML = `
+
+<div class="empty-msg">
+
+<i
+data-lucide="receipt"
+></i>
+
+<p>
+Nenhum gasto encontrado.
+</p>
+
+<small>
+Não há gastos registrados
+neste mês para este filtro.
+</small>
+
+</div>
+
+`;
+
+
+lucide.createIcons();
+
+return;
+
+}
+
+
+
+let total = 0;
+
+
+let html = `
+
+<div class="table-card">
+
+<table class="expenses-table">
+
+<thead>
+
+<tr>
+
+<th>
+Descrição
+</th>
+
+<th>
+Categoria
+</th>
+
+<th>
+Data
+</th>
+
+<th class="text-right">
+Valor
+</th>
+
+<th></th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+`;
+
+
+
+gastosDoMes.forEach(
+function (gasto) {
+
+const valor =
+Number(
+gasto.valor
+);
+
+
+total += valor;
+
+
+html += `
+
+<tr>
+
+<td class="font-medium">
+
+${escaparHTML(
+gasto.descricao
+)}
+
+</td>
+
+
+<td>
+
+<span class="cat-badge">
+
+<i
+data-lucide="${iconeCategoria(
+gasto.categoria
+)}"
+></i>
+
+${gasto.categoria}
+
+</span>
+
+</td>
+
+
+<td class="text-muted">
+
+${formatarData(
+gasto.data
+)}
+
+</td>
+
+
+<td class="text-right font-bold">
+
+${formatarValor(
+valor
+)}
+
+</td>
+
+
+<td class="text-right">
+
+<button
+class="delete-btn"
+type="button"
+data-id="${gasto.id}"
+title="Excluir gasto"
+>
+
+<i
+data-lucide="trash-2"
+></i>
+
+</button>
+
+</td>
+
+</tr>
+
+`;
+
+}
+);
+
+
+
+html += `
+
+</tbody>
+
+</table>
+
+
+<div class="table-footer">
+
+<span>
+Total
+</span>
+
+<strong>
+${formatarValor(
+total
+)}
+</strong>
+
+</div>
+
+</div>
+
+`;
+
+
+expensesList.innerHTML =
+html;
+
+
+lucide.createIcons();
+
+
+adicionarEventosExcluir();
+
+}
+
+
+
+/* =========================
+PROTEÇÃO CONTRA HTML
+========================== */
+
+function escaparHTML(
+texto
+) {
+
+const div =
+document.createElement(
+"div"
+);
+
+
+div.textContent =
+texto;
+
+
+return div.innerHTML;
+
+}
+
+
+
+/* =========================
+EXCLUIR
+========================== */
+
+function adicionarEventosExcluir() {
+
+const botoes =
+document.querySelectorAll(
+".delete-btn"
+);
+
+
+botoes.forEach(
+function (botao) {
+
+botao.addEventListener(
+"click",
+function () {
+
+const id =
+botao.dataset.id;
+
+
+const confirmar =
+confirm(
+"Tem certeza que deseja excluir este gasto?"
+);
+
+
+if (
+!confirmar
+) {
+
+return;
+
+}
+
+
+let gastos =
+pegarGastos();
+
+
+gastos =
+gastos.filter(
+function (
+gasto
+) {
+
+return String(
+gasto.id
+) !==
+String(
+id
+);
+
+}
+);
+
+
+salvarGastos(
+gastos
+);
+
+
+renderizarGastos();
+
+}
+);
+
+}
+);
+
+}
+
+
+
+/* =========================
+SALVAR GASTO
+========================== */
+
+formGasto.addEventListener(
+"submit",
+function (e) {
+
+e.preventDefault();
+
+
+const descricao =
+descricaoInput.value.trim();
+
+
+const valor =
+Number(
+valorInput.value
+);
+
+
+const categoria =
+categoriaInput.value;
+
+
+const data =
+dataInput.value;
+
+
+/* =========================
+VALIDAÇÕES
+========================== */
+
+if (!descricao) {
+
+alert(
+"Digite a descrição do gasto."
+);
+
+return;
+
+}
+
+
+if (
+!valor ||
+valor <= 0
+) {
+
+alert(
+"Digite um valor válido."
+);
+
+return;
+
+}
+
+
+if (!categoria) {
+
+alert(
+"Selecione uma categoria."
+);
+
+return;
+
+}
+
+
+if (!data) {
+
+alert(
+"Selecione uma data."
+);
+
+return;
+
+}
+
+
+
+/* =========================
+CRIAR GASTO
+========================== */
+
+const novoGasto = {
+
+id:
+Date.now(),
+
+descricao:
+descricao,
+
+valor:
+valor,
+
+categoria:
+categoria,
+
+data:
+data
+
+};
+
+
+
+/* =========================
+SALVAR
+========================== */
+
+const gastos =
+pegarGastos();
+
+
+gastos.push(
+novoGasto
+);
+
+
+salvarGastos(
+gastos
+);
+
+
+
+/* =========================
+MUDAR PARA O MÊS
+DA DATA CADASTRADA
+========================== */
+
+const partes =
+data.split(
+"-"
+);
+
+
+anoSelecionado =
+Number(
+partes[0]
+);
+
+
+mesSelecionado =
+Number(
+partes[1]
+) - 1;
+
+
+
+/* =========================
+LIMPAR FORM
+========================== */
+
+formGasto.reset();
+
+
+dataInput.value =
+dataHoje();
+
+
+
+/* =========================
+VOLTAR PARA LISTA
+========================== */
+
+formView.classList.add(
+"hidden"
+);
+
+
+listView.classList.remove(
+"hidden"
+);
+
+
+
+/* =========================
+MOSTRAR MÊS CORRETO
+========================== */
+
+atualizarMes();
+
+
+
+alert(
+"Gasto cadastrado com sucesso!"
+);
+
+}
+);
+
+
+
+/* =========================
+FILTRO VISUAL
+========================== */
+
+const btnFilter =
+document.getElementById(
+"btnFilter"
+);
+
+
+btnFilter.addEventListener(
+"click",
+function () {
+
+const categoriaAtual =
+categoriaSelecionada;
+
+
+if (
+categoriaAtual ===
+"Todos"
+) {
+
+alert(
+"Selecione uma categoria abaixo para filtrar seus gastos."
+);
+
+} else {
+
+alert(
+`Mostrando apenas gastos de ${categoriaAtual}.`
+);
+
+}
+
+}
+);
+
+
+
+/* =========================
+INICIAR PÁGINA
+========================== */
+
+atualizarMes();
+
+}
+
+);
+if (localStorage.getItem("poupe-theme") === "dark") {
+    document.body.classList.add("dark-mode");
+  }
+</script>
+
+
+</body>
+
+</html>

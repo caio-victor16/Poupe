@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>IA Assistente - Poupe+</title>
+
+<link rel="stylesheet" href="ia.css">
+<script src="api.js"></script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+
+<div class="layout">
+
+<!-- Menu Lateral -->
+<aside>
+<div class="brand-wrapper">
+<div class="brand">poupe+</div>
+<i data-lucide="menu" class="menu-icon"></i>
+</div>
+
+<nav class="nav-container">
+<ul class="nav-list">
+<li class="nav-item "><a href="inicio.html"><i data-lucide="home"></i> Início</a></li>
+<li class="nav-item"><a href="gastos.html"><i data-lucide="calendar"></i> Gastos</a></li>
+<li class="nav-item"><a href="receitas.html"><i data-lucide="wallet"></i> Receitas</a></li>
+<li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i> Relatórios</a></li>
+<li class="nav-item"><a href="metas.html"><i data-lucide="target"></i> Metas</a></li>
+<li class="nav-item"><a href="alertas.html"><i data-lucide="bell"></i> Alertas</a></li>
+<li class="nav-item active "><a href="ia.html"><i data-lucide="sparkles"></i>IA Assistente</a></li>
+</ul>
+
+<ul class="nav-list nav-bottom">
+<li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i> Configurações</a></li>
+<li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i> Sair</a></li>
+</ul>
+</nav>
+</aside>
+
+
+
+<!-- ÁREA PRINCIPAL -->
+<main>
+
+<!-- HEADER -->
+<header class="top-header">
+
+<div class="user-info">
+
+<h2>
+Olá
+</h2>
+
+<div class="month">
+Agosto de 2026
+<i data-lucide="chevron-down"></i>
+</div>
+
+</div>
+
+
+<div class="header-right">
+
+<div class="notification">
+<i data-lucide="bell"></i>
+</div>
+
+<div class="profile">
+D
+</div>
+
+</div>
+
+</header>
+
+
+<!-- ÁREA DO CHAT -->
+<section class="chat-area">
+
+<!-- CONTEÚDO DO CHAT -->
+<div class="chat-content">
+
+<!-- TÍTULO -->
+<div class="chat-title">
+
+<div class="title-icon">
+<i data-lucide="sparkles"></i>
+</div>
+
+<div>
+
+<h1>
+IA Assistente
+<span>BETA</span>
+</h1>
+
+<p>
+Seu assistente financeiro pessoal.
+</p>
+
+</div>
+
+</div>
+
+
+<!-- MENSAGENS -->
+<div class="messages">
+
+<!-- PRIMEIRA MENSAGEM DA IA -->
+<div class="message ai-message">
+
+<div class="message-avatar">
+<i data-lucide="sparkles"></i>
+</div>
+
+<div class="message-box">
+
+<p>
+Olá! Eu sou seu assistente financeiro.
+</p>
+
+<p>
+Posso te ajudar a entender seus gastos,
+organizar suas finanças e planejar suas metas.
+</p>
+
+<p>
+Como posso te ajudar hoje?
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- INPUT -->
+<div class="chat-input-area">
+
+<div class="input-box">
+
+<textarea
+id="messageInput"
+placeholder="Digite sua mensagem..."
+rows="1"
+></textarea>
+
+<button id="sendButton">
+<i data-lucide="send"></i>
+</button>
+
+</div>
+
+<p class="disclaimer">
+A IA pode cometer erros. Sempre revise as informações.
+</p>
+
+</div>
+
+</div>
+
+
+<!-- LATERAL DIREITA -->
+<aside class="right-panel">
+
+<div class="side-card suggestions-card">
+
+<div class="card-title">
+<i data-lucide="lightbulb"></i>
+
+<h3>Sugestões para você</h3>
+</div>
+
+<div class="suggestion-placeholder"></div>
+<div class="suggestion-placeholder"></div>
+<div class="suggestion-placeholder"></div>
+<div class="suggestion-placeholder"></div>
+
+</div>
+
+
+<div class="side-card summary-card">
+
+<div class="card-title">
+<i data-lucide="pie-chart"></i>
+
+<h3>Resumo rápido</h3>
+</div>
+
+<div class="summary-placeholder"></div>
+<div class="summary-placeholder"></div>
+<div class="summary-placeholder"></div>
+
+</div>
+
+
+<div class="side-card remember-card">
+
+<div class="card-title">
+<i data-lucide="calendar-check"></i>
+
+<h3></h3>
+</div>
+
+</div>
+
+</aside>
+
+</section>
+
+</main>
+
+</div>
+
+
+<script>
+    if (localStorage.getItem("poupe-theme") === "dark") {
+    document.body.classList.add("dark-mode");
+  }
+</script>
+
+</body>
+
+</html>

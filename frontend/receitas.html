@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poupe+ | Minhas Receitas</title>
+
+  <link rel="stylesheet" href="receitas.css">
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="api.js" defer></script>
+</head>
+
+<body>
+
+<!-- Menu Lateral -->
+<aside>
+<div class="brand-wrapper">
+<div class="brand">poupe+</div>
+<i data-lucide="menu" class="menu-icon"></i>
+</div>
+
+<nav class="nav-container">
+<ul class="nav-list">
+<li class="nav-item "><a href="inicio.html"><i data-lucide="home"></i> Início</a></li>
+<li class="nav-item"><a href="gastos.html"><i data-lucide="calendar"></i> Gastos</a></li>
+<li class="nav-item active"><a href="receitas.html"><i data-lucide="wallet"></i> Receitas</a></li>
+<li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i> Relatórios</a></li>
+<li class="nav-item"><a href="metas.html"><i data-lucide="target"></i> Metas</a></li>
+<li class="nav-item"><a href="alertas.html"><i data-lucide="bell"></i> Alertas</a></li>
+<li class="nav-item "><a href="ia.html"><i data-lucide="sparkles"></i>IA Assistente</a></li>
+</ul>
+
+<ul class="nav-list nav-bottom">
+<li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i> Configurações</a></li>
+<li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i> Sair</a></li>
+</ul>
+</nav>
+</aside>
+
+
+<!-- =========================
+     CONTEÚDO PRINCIPAL
+========================= -->
+
+<main>
+
+  <div class="header">
+
+    <h1>Minhas receitas</h1>
+
+    <button class="btn-add" id="btnOpenModal">
+      <i data-lucide="plus"></i>
+      Adicionar receita
+    </button>
+
+  </div>
+
+
+  <!-- =========================
+       SELETOR DE MÊS
+  ========================= -->
+
+  <div class="month-selector">
+
+    <!-- Mês anterior -->
+    <button
+      class="month-btn"
+      id="prevMonth"
+      type="button"
+      title="Mês anterior"
+    >
+      <i data-lucide="chevron-left"></i>
+    </button>
+
+
+    <!-- Calendário para escolher mês -->
+    <div class="month-picker-wrapper">
+
+      <i data-lucide="calendar"></i>
+
+      <input
+        type="month"
+        id="monthPicker"
+        value="2026-08"
+        title="Escolher mês"
+      >
+
+    </div>
+
+
+    <!-- Próximo mês -->
+    <button
+      class="month-btn"
+      id="nextMonth"
+      type="button"
+      title="Próximo mês"
+    >
+      <i data-lucide="chevron-right"></i>
+    </button>
+
+  </div>
+
+
+  <!-- =========================
+       RESUMO
+  ========================= -->
+
+  <div class="summary-card">
+
+    <span class="summary-label">
+      Total de receitas
+    </span>
+
+    <h2
+      class="summary-value"
+      id="totalDisplay"
+    >
+      R$ 0,00
+    </h2>
+
+  </div>
+
+
+  <!-- =========================
+       TABELA
+  ========================= -->
+
+  <div class="table-card">
+
+    <table class="incomes-table">
+
+      <thead>
+
+        <tr>
+
+          <th>Descrição</th>
+
+          <th>Data</th>
+
+          <th>Categoria</th>
+
+          <th class="text-right">
+            Valor
+          </th>
+
+          <th class="action-header"></th>
+
+        </tr>
+
+      </thead>
+
+      <tbody id="incomesTableBody">
+        <!-- Preenchido pelo JavaScript -->
+      </tbody>
+
+    </table>
+
+  </div>
+
+
+  <!-- =========================
+       TOTAL
+  ========================= -->
+
+  <div class="total-footer-card">
+
+    <span>
+      Total de receitas
+    </span>
+
+    <strong id="footerTotalDisplay">
+      R$ 0,00
+    </strong>
+
+  </div>
+
+</main>
+
+
+<!-- =========================
+     MODAL DE NOVA RECEITA
+========================= -->
+
+<div
+  class="modal-overlay"
+  id="modal"
+>
+
+  <div class="modal">
+
+    <h2>Nova Receita</h2>
+
+
+    <form id="incomeForm">
+
+
+      <!-- Descrição -->
+
+      <div class="form-group">
+
+        <label for="incomeDesc">
+          Descrição
+        </label>
+
+        <input
+          type="text"
+          id="incomeDesc"
+          placeholder="Ex: Salário, Freelancer..."
+          required
+        >
+
+      </div>
+
+
+      <!-- Categoria -->
+
+      <div class="form-group">
+
+        <label for="incomeCategory">
+          Categoria
+        </label>
+
+        <select
+          id="incomeCategory"
+          required
+        >
+
+          <option
+            value=""
+            disabled
+            selected
+          >
+            Selecione uma categoria
+          </option>
+
+          <option value="Salário">
+            Salário
+          </option>
+
+          <option value="Trabalho">
+            Trabalho
+          </option>
+
+          <option value="Investimentos">
+            Investimentos
+          </option>
+
+          <option value="Outros">
+            Outros
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <!-- Valor -->
+
+      <div class="form-group">
+
+        <label for="incomeValue">
+          Valor (R$)
+        </label>
+
+        <input
+          type="number"
+          id="incomeValue"
+          step="0.01"
+          min="0"
+          placeholder="Ex: 2500.00"
+          required
+        >
+
+      </div>
+
+
+      <!-- Data -->
+
+      <div class="form-group">
+
+        <label for="incomeDate">
+          Data
+        </label>
+
+        <input
+          type="date"
+          id="incomeDate"
+          required
+        >
+
+      </div>
+
+
+      <!-- Botões -->
+
+      <div class="modal-actions">
+
+        <button
+          type="button"
+          class="btn-cancel"
+          id="btnCancelModal"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          class="btn-save"
+        >
+          Salvar Receita
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<script>
+
+document.addEventListener('DOMContentLoaded', () => {
+
+
+  /* =========================
+     LUCIDE
+  ========================= */
+
+  lucide.createIcons();
+
+
+  /* =========================
+     ELEMENTOS
+  ========================= */
+
+  const modal =
+    document.getElementById('modal');
+
+  const btnOpenModal =
+    document.getElementById('btnOpenModal');
+
+  const btnCancelModal =
+    document.getElementById('btnCancelModal');
+
+  const incomeForm =
+    document.getElementById('incomeForm');
+
+  const tableBody =
+    document.getElementById('incomesTableBody');
+
+  const totalDisplay =
+    document.getElementById('totalDisplay');
+
+  const footerTotalDisplay =
+    document.getElementById('footerTotalDisplay');
+
+  const incomeDateInput =
+    document.getElementById('incomeDate');
+
+  const prevMonth =
+    document.getElementById('prevMonth');
+
+  const nextMonth =
+    document.getElementById('nextMonth');
+
+  const monthPicker =
+    document.getElementById('monthPicker');
+
+
+  /* =========================
+     MÊS SELECIONADO
+  ========================= */
+
+  let selectedDate =
+    new Date(2026, 7, 1);
+
+  /*
+    Janeiro = 0
+    Fevereiro = 1
+    Março = 2
+    Abril = 3
+    Maio = 4
+    Junho = 5
+    Julho = 6
+    Agosto = 7
+  */
+
+
+  /* =========================
+     RECEITAS PADRÃO
+  ========================= */
+
+  const defaultIncomes = [
+
+    {
+      description: 'Salário',
+      date: '2026-08-01',
+      category: 'Salário',
+      amount: 2800.00
+    },
+
+    {
+      description: 'Freelancer',
+      date: '2026-08-05',
+      category: 'Trabalho',
+      amount: 500.00
+    },
+
+    {
+      description: 'Venda',
+      date: '2026-08-10',
+      category: 'Outros',
+      amount: 250.00
+    }
+
+  ];
+
+
+  /* =========================
+     CARREGAR LOCAL STORAGE
+  ========================= */
+
+  let incomes =
+    JSON.parse(
+      localStorage.getItem(
+        'poupePlus_incomes'
+      )
+    ) || defaultIncomes;
+
+
+  /* =========================
+     DATA PADRÃO DO FORMULÁRIO
+  ========================= */
+
+  incomeDateInput.value =
+    new Date()
+      .toISOString()
+      .split('T')[0];
+
+
+  /* =========================
+     FORMATAR DINHEIRO
+  ========================= */
+
+  function formatMoney(value) {
+
+    return Number(value).toLocaleString(
+      'pt-BR',
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }
+    );
+
+  }
+
+
+  /* =========================
+     FORMATAR DATA
+  ========================= */
+
+  function formatDate(dateStr) {
+
+    if (!dateStr) {
+      return '';
+    }
+
+    const parts =
+      dateStr.split('-');
+
+    if (parts.length === 3) {
+
+      return `
+        ${parts[2]}/${parts[1]}/${parts[0]}
+      `;
+
+    }
+
+    return dateStr;
+
+  }
+
+
+  /* =========================
+     ATUALIZAR CALENDÁRIO
+  ========================= */
+
+  function updateMonthPicker() {
+
+    const year =
+      selectedDate.getFullYear();
+
+    const month =
+      String(
+        selectedDate.getMonth() + 1
+      ).padStart(2, '0');
+
+
+    monthPicker.value =
+      `${year}-${month}`;
+
+  }
+
+
+  /* =========================
+     RENDERIZAR RECEITAS
+  ========================= */
+
+  function renderIncomes() {
+
+    tableBody.innerHTML = '';
+
+    let total = 0;
+
+
+    const selectedMonth =
+      selectedDate.getMonth();
+
+    const selectedYear =
+      selectedDate.getFullYear();
+
+
+    /*
+      Filtra as receitas
+      pelo mês e ano escolhidos
+    */
+
+    const filteredIncomes =
+      incomes.filter(item => {
+
+        if (!item.date) {
+          return false;
+        }
+
+
+        const date =
+          new Date(
+            item.date + 'T00:00:00'
+          );
+
+
+        return (
+          date.getMonth() === selectedMonth &&
+          date.getFullYear() === selectedYear
+        );
+
+      });
+
+
+    /* =========================
+       SEM RECEITAS
+    ========================= */
+
+    if (filteredIncomes.length === 0) {
+
+      tableBody.innerHTML = `
+
+        <tr>
+
+          <td
+            colspan="5"
+            class="empty-msg"
+          >
+            Nenhuma receita cadastrada
+            neste mês.
+          </td>
+
+        </tr>
+
+      `;
+
+    }
+
+
+    /* =========================
+       COM RECEITAS
+    ========================= */
+
+    else {
+
+      filteredIncomes.forEach(item => {
+
+        total += Number(item.amount);
+
+
+        const originalIndex =
+          incomes.indexOf(item);
+
+
+        const tr =
+          document.createElement('tr');
+
+
+        tr.innerHTML = `
+
+          <td class="font-medium">
+            ${item.description}
+          </td>
+
+          <td class="text-muted">
+            ${formatDate(item.date)}
+          </td>
+
+          <td class="text-muted">
+            ${item.category}
+          </td>
+
+          <td class="text-right font-bold">
+            R$ ${formatMoney(item.amount)}
+          </td>
+
+          <td class="action-cell">
+
+            <button
+              class="delete-btn"
+              data-index="${originalIndex}"
+              title="Excluir"
+            >
+
+              <i data-lucide="trash-2"></i>
+
+            </button>
+
+          </td>
+
+        `;
+
+
+        tableBody.appendChild(tr);
+
+      });
+
+    }
+
+
+    /* =========================
+       ATUALIZAR TOTAL
+    ========================= */
+
+    const formattedTotal =
+      `R$ ${formatMoney(total)}`;
+
+
+    totalDisplay.innerText =
+      formattedTotal;
+
+
+    footerTotalDisplay.innerText =
+      formattedTotal;
+
+
+    /* =========================
+       ÍCONES
+    ========================= */
+
+    lucide.createIcons();
+
+
+    /* =========================
+       BOTÕES DE EXCLUIR
+    ========================= */
+
+    document
+      .querySelectorAll('.delete-btn')
+      .forEach(button => {
+
+        button.addEventListener(
+          'click',
+          event => {
+
+            const index =
+              event.currentTarget
+                .getAttribute('data-index');
+
+
+            deleteIncome(index);
+
+          }
+        );
+
+      });
+
+  }
+
+
+  /* =========================
+     SETA PARA MÊS ANTERIOR
+  ========================= */
+
+  prevMonth.addEventListener(
+    'click',
+    () => {
+
+      selectedDate.setMonth(
+        selectedDate.getMonth() - 1
+      );
+
+
+      updateMonthPicker();
+
+      renderIncomes();
+
+    }
+  );
+
+
+  /* =========================
+     SETA PARA PRÓXIMO MÊS
+  ========================= */
+
+  nextMonth.addEventListener(
+    'click',
+    () => {
+
+      selectedDate.setMonth(
+        selectedDate.getMonth() + 1
+      );
+
+
+      updateMonthPicker();
+
+      renderIncomes();
+
+    }
+  );
+
+
+  /* =========================
+     CALENDÁRIO
+  ========================= */
+
+  monthPicker.addEventListener(
+    'change',
+    () => {
+
+      if (!monthPicker.value) {
+        return;
+      }
+
+
+      const [year, month] =
+        monthPicker.value.split('-');
+
+
+      selectedDate =
+        new Date(
+          Number(year),
+          Number(month) - 1,
+          1
+        );
+
+
+      renderIncomes();
+
+    }
+  );
+
+
+  /* =========================
+     ABRIR MODAL
+  ========================= */
+
+  btnOpenModal.addEventListener(
+    'click',
+    () => {
+
+      modal.classList.add('active');
+
+    }
+  );
+
+
+  /* =========================
+     FECHAR MODAL
+  ========================= */
+
+  function closeModal() {
+
+    modal.classList.remove('active');
+
+    incomeForm.reset();
+
+
+    incomeDateInput.value =
+      new Date()
+        .toISOString()
+        .split('T')[0];
+
+  }
+
+
+  btnCancelModal.addEventListener(
+    'click',
+    closeModal
+  );
+
+
+  /* =========================
+     SALVAR RECEITA
+  ========================= */
+
+  incomeForm.addEventListener(
+    'submit',
+    event => {
+
+      event.preventDefault();
+
+
+      const description =
+        document
+          .getElementById('incomeDesc')
+          .value.trim();
+
+
+      const category =
+        document
+          .getElementById('incomeCategory')
+          .value;
+
+
+      const amount =
+        parseFloat(
+          document
+            .getElementById('incomeValue')
+            .value
+        );
+
+
+      const date =
+        document
+          .getElementById('incomeDate')
+          .value;
+
+
+      incomes.push({
+
+        description: description,
+
+        category: category,
+
+        amount: amount,
+
+        date: date
+
+      });
+
+
+      /* Salvar */
+
+      localStorage.setItem(
+        'poupePlus_incomes',
+        JSON.stringify(incomes)
+      );
+
+
+      closeModal();
+
+
+      /*
+        Depois de salvar,
+        vai automaticamente
+        para o mês da receita
+      */
+
+      const [year, month] =
+        date.split('-');
+
+
+      selectedDate =
+        new Date(
+          Number(year),
+          Number(month) - 1,
+          1
+        );
+
+
+      updateMonthPicker();
+
+      renderIncomes();
+
+    }
+  );
+
+
+  /* =========================
+     EXCLUIR RECEITA
+  ========================= */
+
+  function deleteIncome(index) {
+
+    if (
+      confirm(
+        'Deseja remover esta receita?'
+      )
+    ) {
+
+      incomes.splice(
+        Number(index),
+        1
+      );
+
+
+      localStorage.setItem(
+        'poupePlus_incomes',
+        JSON.stringify(incomes)
+      );
+
+
+      renderIncomes();
+
+    }
+
+  }
+
+
+  /* =========================
+     INICIAR
+  ========================= */
+
+  updateMonthPicker();
+
+  renderIncomes();
+
+});
+
+</script>
+
+</body>
+</html>
