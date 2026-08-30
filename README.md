@@ -46,21 +46,43 @@ Poupe/
 
 > Cada funcionalidade completa passa obrigatoriamente por todas as camadas: **Interface → API Flask → Controller → Service → Model/Repository → Banco de Dados.**
 
-## ✅ Funcionalidades Implementadas
+## ✅ Funcionalidades ativas (front-end conectado ao backend)
 
-1. Cadastrar usuário
-2. Realizar login do usuário
-3. Consultar dados do usuário
-4. Cadastrar gasto
-5. Listar / consultar gastos (por id, por categoria, por período)
-6. Atualizar gasto
-7. Excluir gasto
-8. Verificar limite de gastos do usuário
-9. Cadastrar, listar, atualizar e excluir categorias
-10. Cadastrar, listar, atualizar e excluir boletos, além de consultar boletos próximos do vencimento
-11. Cadastrar, listar e excluir alertas do usuário, incluindo geração automática de alerta de limite
-12. Gerar relatório financeiro do usuário
-13. Gerar previsão financeira do usuário
+Estas 10 funcionalidades já funcionam de ponta a ponta — a tela chama a API Flask, que passa por Controller → Service → Model/Repository → MySQL:
+
+1. **Cadastrar usuário** (`cadastro.html` → `POST /usuarios`)
+2. **Login do usuário** (`login.html` → `POST /login`)
+3. **Consultar e editar perfil** (`configuracoes.html` → `GET/PUT /usuarios/<id>`)
+4. **Listar categorias** (usado no formulário de gastos → `GET /categorias`)
+5. **Cadastrar gasto** (`gastos.html` → `POST /gastos`)
+6. **Listar gastos do usuário** (`gastos.html` → `GET /gastos/usuario/<id>`)
+7. **Excluir gasto** (`gastos.html` → `DELETE /gastos/<id>`)
+8. **Verificar limite de gastos + gerar alerta automático** (`gastos.html`, ao cadastrar um gasto → `GET /gastos/usuario/<id>/limite` e `POST /alertas/usuario/<id>/gerar-limite`)
+9. **Listar alertas do usuário** (`alertas.html` → `GET /alertas/usuario/<id>`)
+10. **Relatório financeiro + previsão financeira** (`relatorios.html` → `GET /relatorios/usuario/<id>` e `GET /previsoes/usuario/<id>`)
+
+O backend também expõe rotas de atualização, boletos e mais consultas (ver seção "Funcionalidades da API" abaixo), mas as 10 acima são as que têm tela conectada de verdade nesta versão.
+
+### ⚠️ Limitações conhecidas
+
+- **Sem autenticação real**: o login apenas confere e-mail/senha e guarda o `id` do usuário no `localStorage` do navegador. Não há token/sessão — qualquer pessoa com o `id` de outro usuário pode, hoje, chamar a API diretamente e acessar os dados dele. Não usar em produção sem implementar autenticação (ex.: JWT) antes.
+- **Senha em texto puro**: por decisão do time nesta fase do projeto, as senhas não são criptografadas (hash) no banco.
+- **Receitas, Metas e o Assistente de IA** (`receitas.html`, `metas.html`, `ia.html`) ainda não têm tabela/rota correspondente no backend. `receitas.html` e `metas.html` funcionam apenas com `localStorage` (os dados não são compartilhados entre dispositivos e são perdidos se o cache do navegador for limpo); `ia.html` é uma tela estática, sem lógica de envio de mensagens.
+- **`inicio.html`** (painel inicial) ainda exibe dados fixos de exemplo, sem chamar a API.
+- **Tabela `extrato`**: existe no banco (`bd.sql`) mas não tem model/rota — reservada para uma funcionalidade futura.
+
+## 📋 Funcionalidades da API (backend completo)
+
+1. Cadastrar, listar, consultar, atualizar e excluir usuário
+2. Login do usuário
+3. Cadastrar, listar (geral e por usuário), consultar, atualizar e excluir gasto
+4. Listar gastos por categoria e por período
+5. Verificar limite de gastos do usuário
+6. Cadastrar, listar, atualizar e excluir categorias
+7. Cadastrar, listar (geral e por usuário), atualizar e excluir boletos, e consultar boletos próximos do vencimento
+8. Cadastrar, listar e excluir alertas do usuário, incluindo geração automática de alerta de limite
+9. Gerar relatório financeiro do usuário
+10. Gerar previsão financeira do usuário
 
 ## 🚀 Como executar
 

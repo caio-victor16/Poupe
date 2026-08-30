@@ -72,10 +72,16 @@
 
 <script>
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
     // Ativa os ícones do Lucide
     lucide.createIcons();
+
+
+    const usuarioId = Sessao.exigirLogin();
+    if (!usuarioId) {
+        return;
+    }
 
 
     const alertsListEl = document.getElementById('alertsList');
@@ -87,93 +93,53 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnIcon = document.getElementById('btnIcon');
 
 
-    // Buscar dados de Gastos no localStorage
-    const expenses =
-        JSON.parse(localStorage.getItem('poupePlus_expenses')) || [
+    // Classifica o alerta (vindo do backend) em um estilo visual,
+    // já que o backend só manda "tipo" e "mensagem" em texto livre.
+    function estiloAlerta(alerta) {
+        const msg = (alerta.mensagem || '').toLowerCase();
 
-            {
-                description: 'Mercado',
-                category: 'Alimentação',
-                date: '2026-08-18',
-                amount: 320.00
-            },
-
-            {
-                description: 'Luz',
-                category: 'Outros',
-                date: '2026-08-18',
-                amount: 150.00
-            }
-
-        ];
-
-
-    // Calcular gastos com alimentação
-    const foodExpenses = expenses
-
-        .filter(e => e.category === 'Alimentação')
-
-        .reduce(
-            (sum, e) => sum + Number(e.amount),
-            0
-        );
-
-
-    // Limite de alimentação
-    const foodLimit = 400;
-
-
-    // Porcentagem gasta
-    const foodPct = Math.min(
-        Math.round((foodExpenses / foodLimit) * 100),
-        100
-    );
-
-
-    // Lista de alertas
-    const alertsData = [
-
-        {
-            type: 'danger',
-            icon: 'trending-up',
-            title: 'Gasto acima do esperado',
-            description: `Você já gastou ${foodPct}% do limite de Alimentação.`,
-            date: 'Hoje'
-        },
-
-        {
-            type: 'warning',
-            icon: 'alert-triangle',
-            title: 'Conta próxima do vencimento',
-            description: 'A conta de Luz vence em 2 dias.',
-            date: '18/08/2026'
-        },
-
-        {
-            type: 'success',
-            icon: 'check',
-            title: 'Meta quase alcançada',
-            description: 'Você já alcançou 80% da sua meta Viagem!',
-            date: '17/08/2026'
-        },
-
-        {
-            type: 'warning',
-            icon: 'wallet',
-            title: 'Orçamento mensal',
-            description: 'Você está se aproximando do limite do seu orçamento.',
-            date: '16/08/2026'
-        },
-
-        {
-            type: 'success',
-            icon: 'piggy-bank',
-            title: 'Boa economia!',
-            description: 'Você conseguiu economizar este mês.',
-            date: '15/08/2026'
+        if (msg.includes('ultrapassad')) {
+            return { type: 'danger', icon: 'trending-up' };
         }
 
-    ];
+        if (msg.includes('próximo') || msg.includes('proximo')) {
+            return { type: 'warning', icon: 'alert-triangle' };
+        }
+
+        return { type: 'success', icon: 'bell' };
+    }
+
+    function formatarDataAlerta(dataIso) {
+        if (!dataIso) return '';
+
+        const d = new Date(dataIso);
+        if (isNaN(d.getTime())) return dataIso;
+
+        return d.toLocaleDateString('pt-BR') + ' às ' +
+            d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Busca os alertas reais do usuário na API
+    let alertsData = [];
+
+    try {
+        const alertas = await AlertaAPI.listarPorUsuario(usuarioId);
+
+        alertsData = alertas.map((alerta) => {
+            const estilo = estiloAlerta(alerta);
+
+            return {
+                type: estilo.type,
+                icon: estilo.icon,
+                title: alerta.tipo ? `Alerta de ${alerta.tipo}` : 'Alerta',
+                description: alerta.mensagem,
+                date: formatarDataAlerta(alerta.data),
+            };
+        });
+    } catch (erro) {
+        console.error('Erro ao carregar alertas:', erro);
+        alertsListEl.innerHTML = '<p class="empty-msg">Não foi possível carregar seus alertas.</p>';
+    }
 
 
     // Controla se todos os alertas estão aparecendo
@@ -182,6 +148,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Função para mostrar os alertas
     function renderAlerts() {
+
+        if (alertsData.length === 0) {
+            alertsListEl.innerHTML = '<p class="empty-msg">Nenhum alerta por enquanto. Tudo em ordem!</p>';
+            btnAllAlerts.style.display = 'none';
+            return;
+        }
 
         alertsListEl.innerHTML = '';
 

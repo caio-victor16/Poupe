@@ -65,6 +65,11 @@ def excluir(id_gasto):
         return jsonify({"erro": "Erro ao excluir gasto."}), 500
 
 
+@gasto_bp.get("/gastos/usuario/<int:id_usuario>")
+def listar_por_usuario(id_usuario):
+    return jsonify(service.listar_por_usuario(id_usuario)), 200
+
+
 @gasto_bp.get("/gastos/usuario/<int:id_usuario>/categorias")
 def gastos_por_categoria(id_usuario):
     return jsonify(service.gastos_por_categoria(id_usuario)), 200

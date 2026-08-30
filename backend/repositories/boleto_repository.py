@@ -8,6 +8,9 @@ class BoletoRepository:
     def listar(self):
         return Boleto.listar_todos()
 
+    def listar_por_usuario(self, id_usuario):
+        return Boleto.listar_por_usuario(id_usuario)
+
     def buscar_por_id(self, id_boleto):
         return Boleto.buscar_por_id(id_boleto)
 

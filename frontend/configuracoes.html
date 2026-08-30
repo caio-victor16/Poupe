@@ -8,7 +8,6 @@
   <title>Poupe+ | Configurações</title>
 
   <link rel="stylesheet" href="configuracao.css">
-<link rel="stylesheet" href="api.js">
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
@@ -208,6 +207,7 @@
 
   </main>
 
+  <script src="api.js"></script>
   <script>
     lucide.createIcons();
 
@@ -234,25 +234,36 @@
       panel.classList.remove("active");
     });
 
-    document.getElementById("btn-perfil").addEventListener("click", function(event) {
+    const usuarioId = Sessao.exigirLogin();
+
+    document.getElementById("btn-perfil").addEventListener("click", async function(event) {
       event.preventDefault();
       abrirPainel("Perfil", `
         <div class="panel-section">
           <label>Nome</label>
-          <input type="text" class="panel-input" placeholder="Digite seu nome">
+          <input type="text" class="panel-input" id="perfil-nome" placeholder="Carregando...">
         </div>
         <div class="panel-section">
           <label>E-mail</label>
-          <input type="email" class="panel-input" placeholder="seuemail@email.com">
+          <input type="email" class="panel-input" id="perfil-email" placeholder="Carregando...">
         </div>
         <div class="panel-section">
           <label>Telefone</label>
-          <input type="tel" class="panel-input" placeholder="(00) 00000-0000">
+          <input type="tel" class="panel-input" id="perfil-telefone" placeholder="(00) 00000-0000">
         </div>
-        <button class="panel-button" onclick="salvarAlteracoes()">
+        <button class="panel-button" onclick="salvarPerfil()">
           Salvar alterações
         </button>
       `);
+
+      try {
+        const usuario = await UsuarioAPI.obterPerfil(usuarioId);
+        document.getElementById("perfil-nome").value = usuario.nome || "";
+        document.getElementById("perfil-email").value = usuario.email || "";
+        document.getElementById("perfil-telefone").value = usuario.telefone || "";
+      } catch (erro) {
+        alert(`Erro ao carregar perfil: ${erro.message}`);
+      }
     });
 
     document.getElementById("btn-categorias").addEventListener("click", function(event) {
@@ -437,6 +448,27 @@
       atualizarTema();
     });
 
+    async function salvarPerfil() {
+      const nome = document.getElementById("perfil-nome").value.trim();
+      const email = document.getElementById("perfil-email").value.trim();
+      const telefone = document.getElementById("perfil-telefone").value.trim();
+
+      if (!nome || !email) {
+        alert("Nome e e-mail são obrigatórios.");
+        return;
+      }
+
+      try {
+        await UsuarioAPI.atualizarPerfil(usuarioId, { nome, email, telefone });
+        alert("Alterações salvas com sucesso!");
+        panel.classList.remove("active");
+      } catch (erro) {
+        alert(`Erro ao salvar alterações: ${erro.message}`);
+      }
+    }
+
+    // Usado apenas pelo painel de "Orçamento mensal", que ainda é uma
+    // maquete (não existe endpoint de orçamento no backend hoje).
     function salvarAlteracoes() {
       alert("Alterações salvas com sucesso!");
     }

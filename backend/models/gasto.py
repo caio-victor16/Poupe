@@ -51,6 +51,15 @@ class Gasto(db.Model):
         return Gasto.query.order_by(Gasto.data.desc()).all()
 
     @staticmethod
+    def listar_por_usuario(id_usuario):
+        return (
+            Gasto.query
+            .filter_by(id_usuario=id_usuario)
+            .order_by(Gasto.data.desc())
+            .all()
+        )
+
+    @staticmethod
     def buscar_por_id(id_gasto):
         return Gasto.query.get(id_gasto)
 

@@ -39,6 +39,15 @@ class Boleto(db.Model):
         return Boleto.query.order_by(Boleto.vencimento.asc()).all()
 
     @staticmethod
+    def listar_por_usuario(id_usuario):
+        return (
+            Boleto.query
+            .filter_by(id_usuario=id_usuario)
+            .order_by(Boleto.vencimento.asc())
+            .all()
+        )
+
+    @staticmethod
     def buscar_por_id(id_boleto):
         return Boleto.query.get(id_boleto)
 

@@ -19,6 +19,8 @@ href="gastos.css"
 
 <script src="https://unpkg.com/lucide@latest"></script>
 
+<script src="api.js" defer></script>
+
 </head>
 
 
@@ -289,10 +291,10 @@ Lazer
 
 <button
 class="tab-btn"
-data-cat="Estudos"
+data-cat="Educação"
 type="button"
 >
-Estudos
+Educação
 </button>
 
 
@@ -430,41 +432,6 @@ required
 Selecione uma categoria
 </option>
 
-
-<option value="Alimentação">
-Alimentação
-</option>
-
-
-<option value="Transporte">
-Transporte
-</option>
-
-
-<option value="Compras">
-Compras
-</option>
-
-
-<option value="Lazer">
-Lazer
-</option>
-
-
-<option value="Estudos">
-Estudos
-</option>
-
-
-<option value="Saúde">
-Saúde
-</option>
-
-
-<option value="Outros">
-Outros
-</option>
-
 </select>
 
 
@@ -526,7 +493,7 @@ Salvar gasto
 
 document.addEventListener(
 "DOMContentLoaded",
-function () {
+async function () {
 
 
 /* =========================
@@ -625,6 +592,54 @@ document.querySelectorAll(
 );
 
 
+/* =========================
+SESSÃO (usuário logado)
+========================== */
+
+const usuarioId = Sessao.exigirLogin();
+if (!usuarioId) {
+  return; // Sessao.exigirLogin() já redireciona para login.html
+}
+
+
+/* =========================
+CATEGORIAS (vêm da API)
+========================== */
+
+let categoriaPorId = {};   // { 3: "saúde" }
+let categoriaPorNome = {}; // { "saúde": 3 }
+let gastosCache = [];      // cache dos gastos do usuário, vindos do backend
+
+function capitalizar(texto) {
+  if (!texto) return texto;
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+async function carregarCategorias() {
+  try {
+    const categorias = await CategoriaAPI.listar();
+
+    categoriaPorId = {};
+    categoriaPorNome = {};
+
+    categorias.forEach((cat) => {
+      categoriaPorId[cat.id_categoria] = cat.nome;
+      categoriaPorNome[cat.nome.toLowerCase()] = cat.id_categoria;
+    });
+
+    // popula o <select> do formulário com as categorias reais do banco
+    categorias.forEach((cat) => {
+      const opcao = document.createElement("option");
+      opcao.value = cat.id_categoria;
+      opcao.textContent = capitalizar(cat.nome);
+      categoriaInput.appendChild(opcao);
+    });
+  } catch (erro) {
+    console.error("Erro ao carregar categorias:", erro);
+    alert("Não foi possível carregar as categorias do servidor.");
+  }
+}
+
 
 /* =========================
 DATA ATUAL
@@ -648,63 +663,31 @@ let categoriaSelecionada =
 
 
 /* =========================
-BANCO LOCAL DOS GASTOS
+GASTOS (via API — cache local)
 ========================== */
 
+// renderizarGastos() é síncrono e lê deste cache; quem muda os dados
+// no servidor precisa chamar carregarGastos() de novo antes de renderizar.
 function pegarGastos() {
-
-const dados =
-localStorage.getItem(
-"poupe_gastos"
-);
-
-
-if (!dados) {
-
-return [];
-
+  return gastosCache;
 }
 
+async function carregarGastos() {
+  try {
+    const gastosDoServidor = await GastoAPI.listarPorUsuario(usuarioId);
 
-try {
-
-const gastos =
-JSON.parse(
-dados
-);
-
-
-return Array.isArray(
-gastos
-)
-? gastos
-: [];
-
-} catch (erro) {
-
-console.error(
-erro
-);
-
-return [];
-
-}
-
-}
-
-
-
-function salvarGastos(
-gastos
-) {
-
-localStorage.setItem(
-"poupe_gastos",
-JSON.stringify(
-gastos
-)
-);
-
+    gastosCache = gastosDoServidor.map((g) => ({
+      id: g.id_gasto,
+      descricao: g.descricao,
+      valor: g.valor,
+      data: g.data,
+      categoria: capitalizar(categoriaPorId[g.id_categoria] || "outros"),
+    }));
+  } catch (erro) {
+    console.error("Erro ao carregar gastos:", erro);
+    gastosCache = [];
+    alert("Não foi possível carregar seus gastos do servidor.");
+  }
 }
 
 
@@ -1153,11 +1136,20 @@ const icones = {
 "Lazer":
 "gamepad-2",
 
-"Estudos":
+"Educação":
 "book-open",
 
 "Saúde":
 "heart-pulse",
+
+"Moradia":
+"home",
+
+"Energia":
+"zap",
+
+"Internet":
+"wifi",
 
 "Outros":
 "ellipsis"
@@ -1469,7 +1461,7 @@ function (botao) {
 
 botao.addEventListener(
 "click",
-function () {
+async function () {
 
 const id =
 botao.dataset.id;
@@ -1490,33 +1482,19 @@ return;
 }
 
 
-let gastos =
-pegarGastos();
+try {
 
+await GastoAPI.excluir(id);
 
-gastos =
-gastos.filter(
-function (
-gasto
-) {
-
-return String(
-gasto.id
-) !==
-String(
-id
-);
-
-}
-);
-
-
-salvarGastos(
-gastos
-);
-
+await carregarGastos();
 
 renderizarGastos();
+
+} catch (erro) {
+
+alert(`Erro ao excluir gasto: ${erro.message}`);
+
+}
 
 }
 );
@@ -1534,7 +1512,7 @@ SALVAR GASTO
 
 formGasto.addEventListener(
 "submit",
-function (e) {
+async function (e) {
 
 e.preventDefault();
 
@@ -1610,47 +1588,29 @@ return;
 
 
 /* =========================
-CRIAR GASTO
+CRIAR GASTO (via API)
 ========================== */
 
-const novoGasto = {
+try {
 
-id:
-Date.now(),
+await GastoAPI.criar({
+  id_usuario: Number(usuarioId),
+  id_categoria: Number(categoria),
+  valor: valor,
+  data: data,
+  descricao: descricao,
+});
 
-descricao:
-descricao,
+} catch (erro) {
 
-valor:
-valor,
+alert(`Erro ao cadastrar gasto: ${erro.message}`);
 
-categoria:
-categoria,
+return;
 
-data:
-data
-
-};
-
+}
 
 
-/* =========================
-SALVAR
-========================== */
-
-const gastos =
-pegarGastos();
-
-
-gastos.push(
-novoGasto
-);
-
-
-salvarGastos(
-gastos
-);
-
+await carregarGastos();
 
 
 /* =========================
@@ -1711,10 +1671,54 @@ MOSTRAR MÊS CORRETO
 atualizarMes();
 
 
+/* =========================
+VERIFICAR LIMITE E GERAR
+ALERTA AUTOMÁTICO
+========================== */
+
+try {
+
+const situacaoLimite =
+await GastoAPI.verificarLimite(usuarioId);
+
+if (
+situacaoLimite &&
+situacaoLimite.situacao !== "dentro_do_limite"
+) {
+
+await AlertaAPI.gerarAlertaLimite(usuarioId);
+
+if (situacaoLimite.situacao === "limite_excedido") {
+
+alert(
+"Gasto cadastrado! Atenção: você ultrapassou seu limite de gastos."
+);
+
+} else {
+
+alert(
+"Gasto cadastrado! Atenção: você está próximo do seu limite de gastos."
+);
+
+}
+
+} else {
 
 alert(
 "Gasto cadastrado com sucesso!"
 );
+
+}
+
+} catch (erro) {
+
+console.error("Erro ao verificar limite:", erro);
+
+alert(
+"Gasto cadastrado com sucesso!"
+);
+
+}
 
 }
 );
@@ -1764,6 +1768,10 @@ alert(
 /* =========================
 INICIAR PÁGINA
 ========================== */
+
+await carregarCategorias();
+
+await carregarGastos();
 
 atualizarMes();
 

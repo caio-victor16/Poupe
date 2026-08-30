@@ -6,7 +6,6 @@ from werkzeug.exceptions import HTTPException
 from backend.config import Config
 from backend.extensions import db, init_extensions
 from backend.routes import register_routes
-from backend.models.usuario import Usuario
 
 # frontend/ é irmã de backend/ na raiz do projeto
 FRONTEND_FOLDER = os.path.abspath(
@@ -31,27 +30,11 @@ def create_app():
         app.logger.exception(erro)
         return jsonify({"erro": f"Erro interno no servidor: {str(erro)}"}), 500
 
-    # Rota de login "garantida" no nível do app (compatibilidade com o frontend)
-    @app.route("/login", methods=["POST"])
-    @app.route("/usuarios/login", methods=["POST"])
-    def api_login():
-        dados = request.get_json(silent=True) or {}
-        email = dados.get("email")
-        senha = dados.get("senha")
-
-        if not email or not senha:
-            return jsonify({"erro": "Email e senha são obrigatórios"}), 400
-
-        usuario = Usuario.query.filter_by(email=email).first()
-
-        if not usuario or usuario.senha != senha:
-            return jsonify({"erro": "Email ou senha incorretos"}), 401
-
-        return jsonify({
-            "mensagem": "Login realizado com sucesso",
-            "usuario_id": usuario.id_usuario,
-            "nome": usuario.nome
-        }), 200
+    # As rotas de login (/login e /usuarios/login) ficam centralizadas em
+    # backend/controllers/usuario_controller.py, reaproveitando o
+    # UsuarioService. Isso evita ter a mesma regra de negócio duplicada
+    # em dois lugares diferentes (o bug antigo que gerava respostas
+    # inconsistentes entre as duas rotas).
 
     # Rotas para servir o frontend (HTML/CSS/JS estáticos)
     @app.route("/")

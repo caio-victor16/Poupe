@@ -65,6 +65,11 @@ def excluir(id_boleto):
         return jsonify({"erro": "Erro ao excluir boleto."}), 500
 
 
+@boleto_bp.get("/boletos/usuario/<int:id_usuario>")
+def listar_por_usuario(id_usuario):
+    return jsonify(service.listar_por_usuario(id_usuario)), 200
+
+
 @boleto_bp.get("/boletos/usuario/<int:id_usuario>/proximos")
 def proximos_vencimentos(id_usuario):
     return jsonify(service.proximos_vencimentos(id_usuario)), 200

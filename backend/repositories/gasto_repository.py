@@ -8,6 +8,9 @@ class GastoRepository:
     def listar(self):
         return Gasto.listar_todos()
 
+    def listar_por_usuario(self, id_usuario):
+        return Gasto.listar_por_usuario(id_usuario)
+
     def buscar_por_id(self, id_gasto):
         return Gasto.buscar_por_id(id_gasto)
 

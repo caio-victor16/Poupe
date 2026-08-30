@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Poupe+ | Cadastro</title>
   <link rel="stylesheet" href="login.css">
-  <script src="api.js"></script>
+  <script src="api.js" defer></script>
 </head>
 <body>
   <main class="login-container">
@@ -66,33 +66,5 @@
       </p>
     </section>
   </main>
-
- <script src="api.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const formCadastro = document.querySelector('form');
-
-      if (formCadastro) {
-        formCadastro.addEventListener('submit', async (e) => {
-          e.preventDefault();
-
-          const nome = document.getElementById('nome')?.value;
-          const email = document.getElementById('email')?.value;
-          const senha = document.getElementById('senha')?.value;
-
-          try {
-            await UsuarioAPI.cadastrar({ nome, email, senha });
-            alert('Cadastro realizado com sucesso! Faça login para continuar.');
-            window.location.href = 'login.html';
-          } catch (erro) {
-            alert(erro.message || 'Erro ao efetuar cadastro.');
-          }
-        });
-      }
-    });
-  </script>
-
-  
-</body>
 </body>
 </html>

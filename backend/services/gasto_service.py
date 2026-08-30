@@ -9,6 +9,9 @@ class GastoService:
     def listar(self):
         return [g.to_dict() for g in self.repository.listar()]
 
+    def listar_por_usuario(self, id_usuario):
+        return [g.to_dict() for g in self.repository.listar_por_usuario(id_usuario)]
+
     def buscar_por_id(self, id_gasto):
         gasto = self.repository.buscar_por_id(id_gasto)
         return gasto.to_dict() if gasto else None

@@ -11,6 +11,7 @@
   <!-- Lucide Icons & Chart.js -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="api.js" defer></script>
 </head>
 
 <body>
@@ -108,11 +109,31 @@
     </div>
   </div>
 
+  <!-- Resumo geral (backend) e Previsão financeira -->
+  <div class="stats-grid" style="margin-top: 1.5rem;">
+    <div class="stat-card">
+      <span class="stat-title">Limite de gastos utilizado (geral)</span>
+      <div class="stat-value" id="statLimiteUtilizado">-</div>
+      <span class="stat-sub" id="statBoletosPendentes">-</span>
+    </div>
+
+    <div class="stat-card">
+      <span class="stat-title">Previsão para o fim do mês</span>
+      <div class="stat-value" id="statPrevisao">-</div>
+      <span class="stat-sub" id="statSituacaoPrevisao">-</span>
+    </div>
+  </div>
+
 </main>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   lucide.createIcons();
+
+  const usuarioId = Sessao.exigirLogin();
+  if (!usuarioId) {
+    return;
+  }
 
   // Elementos do DOM
   const monthPicker = document.getElementById('monthPicker');
@@ -124,10 +145,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const statSaldo = document.getElementById('statSaldo');
   const statMaiorCat = document.getElementById('statMaiorCat');
   const statMaiorCatValor = document.getElementById('statMaiorCatValor');
+  const statLimiteUtilizado = document.getElementById('statLimiteUtilizado');
+  const statBoletosPendentes = document.getElementById('statBoletosPendentes');
+  const statPrevisao = document.getElementById('statPrevisao');
+  const statSituacaoPrevisao = document.getElementById('statSituacaoPrevisao');
 
   // Variável da Data
   let selectedDate = new Date();
-  
+
   // Instâncias dos Gráficos Chart.js
   let categoryChartInstance = null;
   let balanceChartInstance = null;
@@ -144,21 +169,82 @@ document.addEventListener('DOMContentLoaded', () => {
     return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
-  // Buscar Gastos do localStorage
-  function getGastos() {
+  function capitalizar(texto) {
+    if (!texto) return texto;
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
+
+  // Categorias reais do backend (id -> nome)
+  let categoriaPorId = {};
+
+  // Cache dos gastos do usuário, já vindos do backend
+  let gastosCache = [];
+
+  async function carregarDadosBase() {
     try {
-      return JSON.parse(localStorage.getItem('poupe_gastos')) || [];
-    } catch {
-      return [];
+      const categorias = await CategoriaAPI.listar();
+      categorias.forEach((cat) => {
+        categoriaPorId[cat.id_categoria] = cat.nome;
+      });
+    } catch (erro) {
+      console.error('Erro ao carregar categorias:', erro);
+    }
+
+    try {
+      const gastos = await GastoAPI.listarPorUsuario(usuarioId);
+      gastosCache = gastos.map((g) => ({
+        valor: g.valor,
+        data: g.data,
+        categoria: capitalizar(categoriaPorId[g.id_categoria] || 'outros'),
+      }));
+    } catch (erro) {
+      console.error('Erro ao carregar gastos:', erro);
+      gastosCache = [];
     }
   }
 
+  // Buscar Gastos já normalizados (vindos da API)
+  function getGastos() {
+    return gastosCache;
+  }
+
   // Buscar Receitas do localStorage
+  // (o backend ainda não tem tabela/rota de receitas nesta versão)
   function getReceitas() {
     try {
       return JSON.parse(localStorage.getItem('poupePlus_incomes')) || [];
     } catch {
       return [];
+    }
+  }
+
+  // Carrega o resumo geral e a previsão financeira (endpoints do backend)
+  async function carregarResumoEPrevisao() {
+    try {
+      const relatorio = await RelatorioAPI.gerarResumo(usuarioId);
+      statLimiteUtilizado.textContent = `${relatorio.percentual_limite_utilizado}%`;
+      statBoletosPendentes.textContent =
+        `${relatorio.quantidade_boletos_pendentes} boleto(s) pendente(s) — ${formatMoney(relatorio.total_boletos_pendentes)}`;
+    } catch (erro) {
+      console.error('Erro ao carregar relatório financeiro:', erro);
+      statLimiteUtilizado.textContent = '-';
+      statBoletosPendentes.textContent = 'Não foi possível carregar.';
+    }
+
+    try {
+      const previsao = await RelatorioAPI.obterPrevisao(usuarioId);
+      statPrevisao.textContent = formatMoney(previsao.previsao_fim_mes);
+
+      const legendas = {
+        acima_do_limite: 'Acima do limite de gastos ⚠️',
+        proximo_do_limite: 'Próximo do limite de gastos',
+        dentro_do_limite: 'Dentro do limite de gastos ✅',
+      };
+      statSituacaoPrevisao.textContent = legendas[previsao.situacao] || previsao.situacao;
+    } catch (erro) {
+      console.error('Erro ao carregar previsão financeira:', erro);
+      statPrevisao.textContent = '-';
+      statSituacaoPrevisao.textContent = 'Não foi possível carregar.';
     }
   }
 
@@ -287,8 +373,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Inicialização
+  await carregarDadosBase();
   updateMonthPicker();
   renderReport();
+  await carregarResumoEPrevisao();
 });
 if (localStorage.getItem("poupe-theme") === "dark") {
     document.body.classList.add("dark-mode");

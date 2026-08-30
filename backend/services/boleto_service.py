@@ -9,6 +9,9 @@ class BoletoService:
     def listar(self):
         return [b.to_dict() for b in self.repository.listar()]
 
+    def listar_por_usuario(self, id_usuario):
+        return [b.to_dict() for b in self.repository.listar_por_usuario(id_usuario)]
+
     def buscar_por_id(self, id_boleto):
         boleto = self.repository.buscar_por_id(id_boleto)
         return boleto.to_dict() if boleto else None

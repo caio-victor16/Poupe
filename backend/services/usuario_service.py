@@ -57,3 +57,16 @@ class UsuarioService:
 
         self.repository.excluir(usuario)
         return True
+
+    def autenticar(self, email, senha):
+        """
+        Confere e-mail/senha e devolve o usuário (dict) se as
+        credenciais baterem, ou None caso contrário.
+
+        OBS: a senha ainda é comparada em texto puro (sem hash),
+        por decisão explícita do time nesta fase do projeto.
+        """
+        usuario = self.repository.buscar_por_email(email)
+        if usuario is None or usuario.senha != senha:
+            return None
+        return usuario.to_dict()
