@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>IA Assistente - Poupe+</title>
+
+<link rel="stylesheet" href="ia.css">
+
+<script src="api.js" defer></script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+
+</head>
+
+
+<body>
+
+<div class="layout">
+
+
+<!-- =========================
+     MENU LATERAL
+========================= -->
+
+<aside>
+
+    <div class="brand-wrapper">
+
+        <div class="brand">
+            poupe+
+        </div>
+
+        <i data-lucide="menu" class="menu-icon"></i>
+
+    </div>
+
+
+    <nav class="nav-container">
+
+        <ul class="nav-list">
+
+            <li class="nav-item">
+                <a href="inicio.html">
+                    <i data-lucide="home"></i>
+                    Início
+                </a>
+            </li>
+
+
+            <li class="nav-item">
+                <a href="gastos.html">
+                    <i data-lucide="calendar"></i>
+                    Gastos
+                </a>
+            </li>
+
+
+            <li class="nav-item">
+                <a href="receitas.html">
+                    <i data-lucide="wallet"></i>
+                    Receitas
+                </a>
+            </li>
+
+
+            <li class="nav-item">
+                <a href="relatorios.html">
+                    <i data-lucide="bar-chart-3"></i>
+                    Relatórios
+                </a>
+            </li>
+
+
+            <li class="nav-item">
+                <a href="metas.html">
+                    <i data-lucide="target"></i>
+                    Metas
+                </a>
+            </li>
+
+
+            <li class="nav-item">
+                <a href="alertas.html">
+                    <i data-lucide="bell"></i>
+                    Alertas
+                </a>
+            </li>
+
+
+            <li class="nav-item active">
+                <a href="ia.html">
+                    <i data-lucide="sparkles"></i>
+                    IA Assistente
+                </a>
+            </li>
+
+        </ul>
+
+
+        <ul class="nav-list nav-bottom">
+
+            <li class="nav-item">
+                <a href="configuracoes.html">
+                    <i data-lucide="settings"></i>
+                    Configurações
+                </a>
+            </li>
+
+
+            <li class="nav-item">
+                <a href="login.html">
+                    <i data-lucide="log-out"></i>
+                    Sair
+                </a>
+            </li>
+
+        </ul>
+
+    </nav>
+
+</aside>
+
+
+
+<!-- =========================
+     ÁREA PRINCIPAL
+========================= -->
+
+<main>
+
+
+<!-- HEADER -->
+
+<header class="top-header">
+
+    <div class="user-info">
+
+        <h2>
+            Olá
+        </h2>
+
+        <div class="month">
+
+            Agosto de 2026
+
+            <i data-lucide="chevron-down"></i>
+
+        </div>
+
+    </div>
+
+
+    <div class="header-right">
+
+        <div class="notification">
+
+            <i data-lucide="bell"></i>
+
+        </div>
+
+
+        <div class="profile">
+            D
+        </div>
+
+    </div>
+
+</header>
+
+
+
+<!-- =========================
+     CHAT
+========================= -->
+
+<section class="chat-area">
+
+
+<div class="chat-content">
+
+
+<!-- TÍTULO -->
+
+<div class="chat-title">
+
+    <div class="title-icon">
+
+        <i data-lucide="sparkles"></i>
+
+    </div>
+
+
+    <div>
+
+        <h1>
+
+            IA Assistente
+
+            <span>
+                BETA
+            </span>
+
+        </h1>
+
+
+        <p>
+            Seu assistente financeiro pessoal.
+        </p>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================
+     MENSAGENS
+========================= -->
+
+<div
+    class="messages"
+    id="messages"
+>
+
+
+<!-- Mensagem inicial -->
+
+<div class="message ai-message">
+
+    <div class="message-avatar">
+
+        <i data-lucide="sparkles"></i>
+
+    </div>
+
+
+    <div class="message-box">
+
+        <p>
+            Olá! Eu sou seu assistente financeiro.
+        </p>
+
+        <p>
+            Posso te ajudar a entender seus gastos,
+            organizar suas finanças e planejar suas metas.
+        </p>
+
+        <p>
+            Como posso te ajudar hoje?
+        </p>
+
+    </div>
+
+</div>
+
+</div>
+
+
+
+<!-- =========================
+     INPUT
+========================= -->
+
+<div class="chat-input-area">
+
+    <div class="input-box">
+
+        <textarea
+            id="messageInput"
+            placeholder="Digite sua mensagem..."
+            rows="1"
+        ></textarea>
+
+
+        <button
+            id="sendButton"
+            type="button"
+            title="Enviar mensagem"
+        >
+
+            <i data-lucide="send"></i>
+
+        </button>
+
+    </div>
+
+
+    <p class="disclaimer">
+
+        A IA pode cometer erros.
+        Sempre revise as informações.
+
+    </p>
+
+</div>
+
+
+</div>
+
+
+
+<!-- =========================
+     PAINEL DIREITO
+========================= -->
+
+<aside class="right-panel">
+
+
+<!-- SUGESTÕES -->
+
+<div class="side-card suggestions-card">
+
+    <div class="card-title">
+
+        <i data-lucide="lightbulb"></i>
+
+        <h3>
+            Sugestões para você
+        </h3>
+
+    </div>
+
+
+    <button
+        class="suggestion-button"
+        data-message="Como posso economizar dinheiro este mês?"
+    >
+        Como posso economizar este mês?
+    </button>
+
+
+    <button
+        class="suggestion-button"
+        data-message="Quais hábitos podem me ajudar a gastar menos?"
+    >
+        Como gastar menos?
+    </button>
+
+
+    <button
+        class="suggestion-button"
+        data-message="Como posso organizar melhor meu orçamento?"
+    >
+        Como organizar meu orçamento?
+    </button>
+
+
+    <button
+        class="suggestion-button"
+        data-message="Me dê dicas para controlar meus gastos."
+    >
+        Dicas para controlar gastos
+    </button>
+
+</div>
+
+
+
+<!-- RESUMO -->
+
+<div class="side-card summary-card">
+
+    <div class="card-title">
+
+        <i data-lucide="pie-chart"></i>
+
+        <h3>
+            Assistente financeiro
+        </h3>
+
+    </div>
+
+
+    <p class="summary-text">
+
+        Faça uma pergunta sobre organização,
+        economia ou planejamento financeiro.
+
+    </p>
+
+</div>
+
+
+
+<!-- LEMBRETE -->
+
+<div class="side-card remember-card">
+
+    <div class="card-title">
+
+        <i data-lucide="calendar-check"></i>
+
+        <h3>
+            Lembrete
+        </h3>
+
+    </div>
+
+
+    <p class="summary-text">
+
+        A IA fornece orientações e não substitui
+        uma análise financeira profissional.
+
+    </p>
+
+</div>
+
+</aside>
+
+
+</section>
+
+</main>
+
+</div>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+
+    const input =
+        document.getElementById("messageInput");
+
+
+    const button =
+        document.getElementById("sendButton");
+
+
+    const messages =
+        document.getElementById("messages");
+
+    function adicionarMensagem(
+        texto,
+        tipo
+    ) {
+
+        const message =
+            document.createElement("div");
+
+
+        message.className =
+            `message ${tipo}-message`;
+
+
+        if (tipo === "user") {
+
+            message.innerHTML = `
+
+                <div class="message-box user-box">
+                    <p>${escaparHTML(texto)}</p>
+                </div>
+
+            `;
+
+        } else {
+
+            message.innerHTML = `
+
+                <div class="message-avatar">
+
+                    <i data-lucide="sparkles"></i>
+
+                </div>
+
+
+                <div class="message-box">
+
+                    ${formatarResposta(texto)}
+
+                </div>
+
+            `;
+
+        }
+
+        messages.appendChild(message);
+
+
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+
+
+        messages.scrollTop =
+            messages.scrollHeight;
+
+    }
+
+
+    function escaparHTML(texto) {
+
+        const div =
+            document.createElement("div");
+
+        div.textContent = texto;
+
+        return div.innerHTML;
+
+    }
+
+
+    function formatarResposta(texto) {
+
+        const seguro =
+            escaparHTML(texto);
+
+
+        return seguro
+            .split("\n")
+            .filter(linha => linha.trim() !== "")
+            .map(linha => `<p>${linha}</p>`)
+            .join("");
+
+    }
+
+
+    function mostrarCarregando() {
+
+        const loading =
+            document.createElement("div");
+
+        loading.id =
+            "loading-message";
+
+        loading.className =
+            "message ai-message";
+
+        loading.innerHTML = `
+
+            <div class="message-avatar">
+
+                <i data-lucide="sparkles"></i>
+
+            </div>
+
+
+            <div class="message-box loading-box">
+
+                <p>
+                    Pensando...
+                </p>
+
+            </div>
+
+        `;
+
+        messages.appendChild(loading);
+
+
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+
+
+        messages.scrollTop =
+            messages.scrollHeight;
+
+    }
+
+    function removerCarregando() {
+
+        const loading =
+            document.getElementById(
+                "loading-message"
+            );
+
+
+        if (loading) {
+            loading.remove();
+        }
+
+    }
+
+
+    async function enviarMensagem() {
+
+        const mensagem =
+            input.value.trim();
+
+
+        if (!mensagem) {
+            return;
+        }
+
+        adicionarMensagem(
+            mensagem,
+            "user"
+        );
+
+        input.value = "";
+
+        button.disabled = true;
+
+
+        mostrarCarregando();
+
+
+        try {
+
+            const resultado =
+                await IAAPI.conversar(
+                    mensagem
+                );
+
+
+            removerCarregando();
+
+
+            if (
+                resultado &&
+                resultado.resposta
+            ) {
+
+                adicionarMensagem(
+                    resultado.resposta,
+                    "ai"
+                );
+
+            } else {
+
+                adicionarMensagem(
+                    "Não consegui obter uma resposta da IA.",
+                    "ai"
+                );
+
+            }
+
+
+        } catch (erro) {
+
+            removerCarregando();
+
+
+            adicionarMensagem(
+                `Não foi possível conversar com a IA: ${erro.message}`,
+                "ai"
+            );
+
+        } finally {
+
+            button.disabled = false;
+
+            input.focus();
+
+        }
+
+    }
+
+
+    button.addEventListener(
+        "click",
+        enviarMensagem
+    );
+
+
+
+//enter envia, shift+enter pula uma linha
+
+    input.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+
+                event.preventDefault();
+
+                enviarMensagem();
+
+            }
+
+        }
+    );
+
+
+
+//sugestões
+
+    const sugestoes =
+        document.querySelectorAll(
+            ".suggestion-button"
+        );
+
+
+    sugestoes.forEach(
+        function (botao) {
+
+            botao.addEventListener(
+                "click",
+                function () {
+
+                    const mensagem =
+                        botao.dataset.message;
+
+
+                    input.value =
+                        mensagem;
+
+
+                    enviarMensagem();
+
+                }
+            );
+
+        }
+    );
+
+});
+
+// tema
+
+if (
+    localStorage.getItem("poupe-theme")
+    === "dark"
+) {
+
+    document.body.classList.add(
+        "dark-mode"
+    );
+
+}
+
+</script>
+
+</body>
+
+</html>
