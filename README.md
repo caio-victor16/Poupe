@@ -60,7 +60,7 @@ Estas 10 funcionalidades já funcionam de ponta a ponta — a tela chama a API F
 8. **Verificar limite de gastos + gerar alerta automático** (`gastos.html`, ao cadastrar um gasto → `GET /gastos/usuario/<id>/limite` e `POST /alertas/usuario/<id>/gerar-limite`)
 9. **Listar alertas do usuário** (`alertas.html` → `GET /alertas/usuario/<id>`)
 10. **Relatório financeiro + previsão financeira** (`relatorios.html` → `GET /relatorios/usuario/<id>` e `GET /previsoes/usuario/<id>`)
-
+11. **I.A**
 O backend também expõe rotas de atualização, boletos e mais consultas (ver seção "Funcionalidades da API" abaixo), mas as 10 acima são as que têm tela conectada de verdade nesta versão.
 
 ### ⚠️ Limitações conhecidas
