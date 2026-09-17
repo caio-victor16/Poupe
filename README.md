@@ -103,6 +103,7 @@ O backend também expõe rotas de atualização, boletos e mais consultas (ver s
    MYSQL_USER=root
    MYSQL_PASSWORD=
    MYSQL_DATABASE=poupe
+   GEMINI_API_KEY= "chave da api"
    ```
 4. Execute o script `database/mysql/bd.sql` no MySQL para criar o banco e as tabelas, e em seguida `database/mysql/procedures.sql` para criar as Stored Procedures.
 5. Rode a aplicação:
