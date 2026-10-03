@@ -38,7 +38,7 @@ Poupe/
 │   └── __init__.py      # Application Factory (create_app)
 ├── frontend/             # Telas (HTML/CSS/JS) que consomem a API
 ├── database/
-│   └── mysql/            # Scripts de criação do banco (bd.sql) e Stored Procedures (procedures.sql)
+│   └── mysql/            # Script de criação do banco, tabelas e Stored Procedures (poupe.sql)
 ├── run.py                 # Ponto de entrada da aplicação
 ├── requirements.txt
 └── README.md
@@ -69,7 +69,7 @@ O backend também expõe rotas de atualização, boletos e mais consultas (ver s
 - **Senha em texto puro**: por decisão do time nesta fase do projeto, as senhas não são criptografadas (hash) no banco.
 - **Receitas, Metas e o Assistente de IA** (`receitas.html`, `metas.html`, `ia.html`) ainda não têm tabela/rota correspondente no backend. `receitas.html` e `metas.html` funcionam apenas com `localStorage` (os dados não são compartilhados entre dispositivos e são perdidos se o cache do navegador for limpo); `ia.html` é uma tela estática, sem lógica de envio de mensagens.
 - **`inicio.html`** (painel inicial) ainda exibe dados fixos de exemplo, sem chamar a API.
-- **Tabela `extrato`**: existe no banco (`bd.sql`) mas não tem model/rota — reservada para uma funcionalidade futura.
+- **Tabela `extrato`**: existe no banco (`poupe.sql`) mas não tem model/rota — reservada para uma funcionalidade futura.
 
 ## 📋 Funcionalidades da API (backend completo)
 
@@ -105,7 +105,7 @@ O backend também expõe rotas de atualização, boletos e mais consultas (ver s
    MYSQL_DATABASE=poupe
    GEMINI_API_KEY= "chave da api"
    ```
-4. Execute o script `database/mysql/bd.sql` no MySQL para criar o banco e as tabelas, e em seguida `database/mysql/procedures.sql` para criar as Stored Procedures.
+4. 4. O banco é criado automaticamente ao rodar python run.py (via setup_db.py). Para recriar do zero: python setup_db.py --reset
 5. Rode a aplicação:
    ```bash
    python run.py
