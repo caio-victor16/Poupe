@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poupe+ | Cofrinho e Metas</title>
+<link rel="stylesheet" href="gastos.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <aside>
+    <div class="brand-wrapper">
+    <div class="brand">poupe+</div>
+    <i data-lucide="menu" class="menu-icon"></i>
+    </div>
+    <nav class="nav-container">
+    <ul class="nav-list">
+    <li class="nav-item"><a href="inicio.html"><i data-lucide="home"></i>Início</a></li>
+    <li class="nav-item"><a href="gastos.html"><i data-lucide="calendar"></i>Gastos</a></li>
+    <li class="nav-item"><a href="receitas.html"><i data-lucide="wallet"></i>Receitas</a></li>
+    <li class="nav-item "><a href="caixa.html"><i data-lucide="landmark"></i>Caixa</a></li>
+    <li class="nav-item active"><a href="cofrinho.html"><i data-lucide="piggy-bank"></i>Cofrinho</a></li>
+    <li class="nav-item"><a href="orcamento.html"><i data-lucide="pie-chart"></i>Orçamento</a></li>
+    <li class="nav-item"><a href="recorrencia.html"><i data-lucide="repeat"></i>Recorrência</a></li>
+    <li class="nav-item"><a href="desperdicio.html"><i data-lucide="trending-down"></i>Desperdício</a></li>
+    <li class="nav-item"><a href="score.html"><i data-lucide="award"></i>Score</a></li>
+    <li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i>Relatórios</a></li>
+    </ul>
+    <ul class="nav-list nav-bottom">
+    <li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i>Configurações</a></li>
+    <li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i>Sair</a></li>
+    </ul>
+    </nav>
+    </aside>
+    
+<main>
+<div id="listView">
+<div class="header">
+<h1>Cofrinho / Metas</h1>
+<button class="btn-add" id="btnShowAddForm" type="button"><i data-lucide="plus"></i>Nova Meta</button>
+</div>
+
+<!-- Simulação do Cofrinho do Troco -->
+<div class="table-card" style="padding: 20px; margin-bottom: 24px; border-left: 4px solid var(--primary); background: #f0fdf4;">
+<div style="display: flex; align-items: center; justify-content: space-between;">
+  <div>
+    <h3 style="font-size: 16px; color: #166534; margin-bottom: 4px;">🪙 Cofrinho do Troco (Simulação)</h3>
+    <p class="text-muted" style="font-size: 13px; margin: 0;">Se você arredondasse cada gasto para o próximo inteiro, teria acumulado:</p>
+  </div>
+  <strong id="trocoEconomizado" style="font-size: 22px; color: #15803d;">R$ 0,00</strong>
+</div>
+<small id="trocoDetalhes" style="display: block; margin-top: 8px; color: #166534; font-size: 12px;"></small>
+</div>
+
+<div id="cofrinhosList"></div>
+</div>
+
+<div id="formView" class="hidden">
+<div class="form-header">
+<button type="button" class="btn-back" id="btnHideAddForm"><i data-lucide="arrow-left"></i>Voltar</button>
+<h1>Criar Nova Meta de Economia</h1>
+</div>
+<div class="form-card">
+<form id="formCofrinho">
+<div class="form-group">
+<label for="tituloMeta">Nome da Meta (Ex: Viagem, Moto, Reserva)</label>
+<input type="text" id="tituloMeta" placeholder="Ex: Viagem de Férias" required>
+</div>
+<div class="form-group">
+<label for="metaValor">Valor Alvo (R$)</label>
+<input type="text" inputmode="decimal" id="metaValor" placeholder="1000,00" required>
+</div>
+<div class="form-group">
+<label for="prazoMeses">Prazo para conclusão (em meses)</label>
+<input type="number" min="1" id="prazoMeses" placeholder="Ex: 12" required>
+</div>
+<div class="form-group">
+<label for="metaGuardado">Já guardado inicialmente (R$)</label>
+<input type="text" inputmode="decimal" id="metaGuardado" placeholder="0,00" value="0" required>
+</div>
+<button type="submit" class="btn-submit-large">Criar Cofrinho</button>
+</form>
+</div>
+</div>
+</main>
+
+<script src="api.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  lucide.createIcons();
+  const listView = document.getElementById("listView");
+  const formView = document.getElementById("formView");
+  const btnShowAddForm = document.getElementById("btnShowAddForm");
+  const btnHideAddForm = document.getElementById("btnHideAddForm");
+  const formCofrinho = document.getElementById("formCofrinho");
+  const cofrinhosList = document.getElementById("cofrinhosList");
+
+  function pegarMetas() {
+    return JSON.parse(localStorage.getItem("poupe_cofrinhos") || "[]");
+  }
+  function salvarMetas(m) {
+    localStorage.setItem("poupe_cofrinhos", JSON.stringify(m));
+  }
+
+  btnShowAddForm.addEventListener("click", () => {
+    listView.classList.add("hidden");
+    formView.classList.remove("hidden");
+  });
+  btnHideAddForm.addEventListener("click", () => {
+    formView.classList.add("hidden");
+    listView.classList.remove("hidden");
+  });
+
+  // Cálculo da Simulação do Cofrinho do Troco
+  function calcularTroco() {
+    const gastos = JSON.parse(localStorage.getItem("poupe_gastos") || "[]");
+    let totalTroco = 0;
+    let qtdTransacoes = 0;
+
+    gastos.forEach(g => {
+      const valor = Number(g.valor);
+      if (!isNaN(valor) && valor > 0) {
+        const teto = Math.ceil(valor);
+        const troco = teto - valor;
+        if (troco > 0) {
+          totalTroco += troco;
+          qtdTransacoes++;
+        }
+      }
+    });
+
+    document.getElementById("trocoEconomizado").textContent = totalTroco.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+    document.getElementById("trocoDetalhes").textContent = `Calculado com base em arredondamentos de ${qtdTransacoes} transações registradas.`;
+  }
+
+  function renderizar() {
+    calcularTroco();
+    const metas = pegarMetas();
+    if (metas.length === 0) {
+      cofrinhosList.innerHTML = `<div class="empty-msg"><i data-lucide="piggy-bank"></i><p>Nenhum cofrinho ativo.</p><small>Crie uma meta para começar a economizar.</small></div>`;
+      lucide.createIcons();
+      return;
+    }
+
+    let html = `<div style="display: grid; gap: 16px;">`;
+    metas.forEach(m => {
+      const progresso = Math.min(100, Math.round((m.guardado / m.alvo) * 100));
+      const restante = Math.max(0, m.alvo - m.guardado);
+      const meses = m.prazoMeses || 1;
+      const guardarPorMes = (restante / meses).toFixed(2);
+
+      html += `<div class="table-card" style="padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <strong>${m.titulo}</strong>
+          <button class="delete-btn" data-id="${m.id}" type="button"><i data-lucide="trash-2"></i></button>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px;" class="text-muted">
+          <span>Guardado: <b>R$ ${Number(m.guardado).toFixed(2)}</b></span>
+          <span>Alvo: <b>R$ ${Number(m.alvo).toFixed(2)}</b> (${progresso}%)</span>
+        </div>
+        <div style="font-size: 12px; margin-bottom: 12px; color: var(--primary);">
+          💡 Faltam <b>R$ ${restante.toFixed(2)}</b>. Guarde <b>R$ ${guardarPorMes}/mês</b> durante ${meses} meses.
+        </div>
+        <div style="background: var(--border-color); border-radius: 8px; height: 10px; overflow: hidden; margin-bottom: 16px;">
+          <div style="background: var(--primary); width: ${progresso}%; height: 100%;"></div>
+        </div>
+        <button class="btn-filter add-valor-btn" data-id="${m.id}" style="width: 100%;"><i data-lucide="plus-circle"></i>Aportar Dinheiro</button>
+      </div>`;
+    });
+    html += `</div>`;
+    cofrinhosList.innerHTML = html;
+    lucide.createIcons();
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        salvarMetas(pegarMetas().filter(x => String(x.id) !== String(btn.dataset.id)));
+        renderizar();
+      });
+    });
+
+    document.querySelectorAll(".add-valor-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        const valorAdicionar = prompt("Quanto deseja aportar nesta meta?");
+        if (valorAdicionar) {
+          const num = Number(valorAdicionar.replace(",", "."));
+          if (!isNaN(num) && num > 0) {
+            let metas = pegarMetas();
+            metas = metas.map(m => String(m.id) === String(id) ? {...m, guardado: Number(m.guardado) + num} : m);
+            salvarMetas(metas);
+            renderizar();
+          } else {
+            alert("Valor inválido!");
+          }
+        }
+      });
+    });
+  }
+
+  formCofrinho.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const titulo = document.getElementById("tituloMeta").value.trim();
+    const alvo = Number(document.getElementById("metaValor").value.replace(",", "."));
+    const prazoMeses = Number(document.getElementById("prazoMeses").value);
+    const guardado = Number(document.getElementById("metaGuardado").value.replace(",", "."));
+
+    if (!titulo || isNaN(alvo) || isNaN(prazoMeses)) { alert("Preencha os campos corretamente!"); return; }
+
+    const metas = pegarMetas();
+    metas.push({ id: Date.now(), titulo, alvo, prazoMeses, guardado: isNaN(guardado) ? 0 : guardado });
+    salvarMetas(metas);
+    formCofrinho.reset();
+    formView.classList.add("hidden");
+    listView.classList.remove("hidden");
+    renderizar();
+  });
+
+  renderizar();
+});
+</script>
+</body>
+</html>

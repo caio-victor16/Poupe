@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poupe+ | Score de Saúde Financeira</title>
+<link rel="stylesheet" href="gastos.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <aside>
+    <div class="brand-wrapper">
+    <div class="brand">poupe+</div>
+    <i data-lucide="menu" class="menu-icon"></i>
+    </div>
+    <nav class="nav-container">
+    <ul class="nav-list">
+    <li class="nav-item"><a href="inicio.html"><i data-lucide="home"></i>Início</a></li>
+    <li class="nav-item"><a href="gastos.html"><i data-lucide="calendar"></i>Gastos</a></li>
+    <li class="nav-item"><a href="receitas.html"><i data-lucide="wallet"></i>Receitas</a></li>
+    <li class="nav-item "><a href="caixa.html"><i data-lucide="landmark"></i>Caixa</a></li>
+    <li class="nav-item"><a href="cofrinho.html"><i data-lucide="piggy-bank"></i>Cofrinho</a></li>
+    <li class="nav-item"><a href="orcamento.html"><i data-lucide="pie-chart"></i>Orçamento</a></li>
+    <li class="nav-item"><a href="recorrencia.html"><i data-lucide="repeat"></i>Recorrência</a></li>
+    <li class="nav-item"><a href="desperdicio.html"><i data-lucide="trending-down"></i>Desperdício</a></li>
+    <li class="nav-item active"><a href="score.html"><i data-lucide="award"></i>Score</a></li>
+    <li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i>Relatórios</a></li>
+    </ul>
+    <ul class="nav-list nav-bottom">
+    <li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i>Configurações</a></li>
+    <li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i>Sair</a></li>
+    </ul>
+    </nav>
+    </aside>
+    
+<main>
+<div class="header">
+<h1>Score de Saúde Financeira</h1>
+</div>
+
+<div class="table-card" style="padding: 40px; text-align: center; margin-bottom: 24px;">
+<i data-lucide="award" style="width: 48px; height: 48px; color: var(--primary); margin-bottom: 12px;"></i>
+<p class="text-muted" style="font-size: 14px; margin-bottom: 8px;">Sua Nota de Saúde Financeira (0 a 100)</p>
+<strong id="scoreValor" style="font-size: 56px; color: var(--primary);">--</strong>
+<p id="scoreStatus" style="font-size: 18px; font-weight: 600; margin-top: 8px;">Calculando...</p>
+</div>
+
+<div class="table-card" style="padding: 24px;">
+<h3 style="font-size: 16px; margin-bottom: 16px;">Diagnóstico do seu Score</h3>
+<div id="diagnosticoList" style="display: grid; gap: 12px; font-size: 14px;" class="text-muted"></div>
+</div>
+</main>
+
+<script src="api.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  lucide.createIcons();
+
+  const gastos = JSON.parse(localStorage.getItem("poupe_gastos") || "[]");
+  const receitas = JSON.parse(localStorage.getItem("poupe_receitas") || "[]");
+  const orcamentos = JSON.parse(localStorage.getItem("poupe_orcamentos") || "[]");
+  const recorrencias = JSON.parse(localStorage.getItem("poupe_recorrencias") || "[]");
+
+  let pontos = 100;
+  let diagnosticos = [];
+
+  // 1. Comprometimento da Renda
+  const totalReceita = receitas.reduce((acc, r) => acc + Number(r.valor), 0);
+  const totalGasto = gastos.reduce((acc, g) => acc + Number(g.valor), 0);
+  
+  if (totalReceita > 0) {
+    const comprometimento = (totalGasto / totalReceita) * 100;
+    if (comprometimento > 90) {
+      pontos -= 35;
+      diagnosticos.push("❌ <b>Comprometimento alto:</b> Seus gastos cobrem mais de 90% da sua renda.");
+    } else if (comprometimento > 70) {
+      pontos -= 15;
+      diagnosticos.push("⚠️ <b>Atenção à renda:</b> Seus gastos estão entre 70% e 90% dos seus ganhos.");
+    } else {
+      diagnosticos.push("✅ <b>Bom comprometimento:</b> Seus gastos estão dentro de uma faixa saudável da renda.");
+    }
+  } else {
+    pontos -= 20;
+    diagnosticos.push("⚠️ Nenhuma receita cadastrada para avaliar o comprometimento.");
+  }
+
+  // 2. Uso do Limite/Orçamento
+  let estourouOrcamento = false;
+  let orcamentoAcima80 = false;
+
+  orcamentos.forEach(o => {
+    const gastoCat = gastos.filter(g => g.categoria === o.categoria).reduce((acc, g) => acc + Number(g.valor), 0);
+    if (gastoCat > o.limite) estourouOrcamento = true;
+    else if (gastoCat >= o.limite * 0.8) orcamentoAcima80 = true;
+  });
+
+  if (estourouOrcamento) {
+    pontos -= 25;
+    diagnosticos.push("❌ <b>Limites estourados:</b> Você ultrapassou o teto de ao menos uma categoria.");
+  } else if (orcamentoAcima80) {
+    pontos -= 10;
+    diagnosticos.push("⚠️ <b>Aproximando do limite:</b> Algumas categorias atingiram mais de 80% do orçamento.");
+  } else if (orcamentos.length > 0) {
+    diagnosticos.push("✅ <b>Respeito aos orçamentos:</b> Todas as categorias dentro dos limites esperados.");
+  }
+
+  // 3. Boletos Pेंडentes/Atrasados
+  const diaAtual = new Date().getDate();
+  const contasAtrasadas = recorrencias.filter(r => r.tipo === "Gasto Fixo" && Number(r.dia) < diaAtual);
+
+  if (contasAtrasadas.length > 0) {
+    pontos -= (contasAtrasadas.length * 10);
+    diagnosticos.push(`❌ <b>Boletos pendentes/atrasados:</b> Identificamos ${contasAtrasadas.length} contas com vencimento anterior a hoje.`);
+  } else {
+    diagnosticos.push("✅ <b>Contas em dia:</b> Nenhuma pendência identificada até a data atual.");
+  }
+
+  const scoreFinal = Math.max(0, Math.min(100, pontos));
+
+  document.getElementById("scoreValor").textContent = scoreFinal;
+  const statusEl = document.getElementById("scoreStatus");
+  const scoreValorEl = document.getElementById("scoreValor");
+
+  if (scoreFinal >= 80) {
+    statusEl.textContent = "Excelente! Saúde Financeira Robusta";
+    statusEl.style.color = "#059669";
+    scoreValorEl.style.color = "#059669";
+  } else if (scoreFinal >= 50) {
+    statusEl.textContent = "Atenção! Saúde Financeira Moderada";
+    statusEl.style.color = "#d97706";
+    scoreValorEl.style.color = "#d97706";
+  } else {
+    statusEl.textContent = "Alerta! Saúde Financeira Crítica";
+    statusEl.style.color = "#dc2626";
+    scoreValorEl.style.color = "#dc2626";
+  }
+
+  document.getElementById("diagnosticoList").innerHTML = diagnosticos.map(d => `<div>${d}</div>`).join("");
+});
+</script>
+</body>
+</html>

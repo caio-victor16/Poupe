@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poupe+ | Orçamento por Categoria</title>
+<link rel="stylesheet" href="gastos.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <aside>
+    <div class="brand-wrapper">
+    <div class="brand">poupe+</div>
+    <i data-lucide="menu" class="menu-icon"></i>
+    </div>
+    <nav class="nav-container">
+    <ul class="nav-list">
+    <li class="nav-item"><a href="inicio.html"><i data-lucide="home"></i>Início</a></li>
+    <li class="nav-item"><a href="gastos.html"><i data-lucide="calendar"></i>Gastos</a></li>
+    <li class="nav-item"><a href="receitas.html"><i data-lucide="wallet"></i>Receitas</a></li>
+    <li class="nav-item "><a href="caixa.html"><i data-lucide="landmark"></i>Caixa</a></li>
+    <li class="nav-item"><a href="cofrinho.html"><i data-lucide="piggy-bank"></i>Cofrinho</a></li>
+    <li class="nav-item active"><a href="orcamento.html"><i data-lucide="pie-chart"></i>Orçamento</a></li>
+    <li class="nav-item"><a href="recorrencia.html"><i data-lucide="repeat"></i>Recorrência</a></li>
+    <li class="nav-item"><a href="desperdicio.html"><i data-lucide="trending-down"></i>Desperdício</a></li>
+    <li class="nav-item"><a href="score.html"><i data-lucide="award"></i>Score</a></li>
+    <li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i>Relatórios</a></li>
+    </ul>
+    <ul class="nav-list nav-bottom">
+    <li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i>Configurações</a></li>
+    <li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i>Sair</a></li>
+    </ul>
+    </nav>
+    </aside>
+    
+
+<main>
+<div id="listView">
+<div class="header">
+<h1>Orçamentos por Categoria</h1>
+<button class="btn-add" id="btnShowAddForm" type="button"><i data-lucide="plus"></i>Definir Limite</button>
+</div>
+
+<div id="alertasContainer" style="margin-bottom: 20px;"></div>
+
+<div id="orcamentosList"></div>
+</div>
+
+<div id="formView" class="hidden">
+<div class="form-header">
+<button type="button" class="btn-back" id="btnHideAddForm"><i data-lucide="arrow-left"></i>Voltar</button>
+<h1>Definir Limite de Gastos</h1>
+</div>
+<div class="form-card">
+<form id="formOrcamento">
+<div class="form-group">
+<label for="catOrcamento">Categoria</label>
+<div class="select-wrapper">
+<select id="catOrcamento" required>
+<option value="Alimentação">Alimentação</option>
+<option value="Transporte">Transporte</option>
+<option value="Compras">Compras</option>
+<option value="Lazer">Lazer</option>
+<option value="Estudos">Estudos</option>
+<option value="Saúde">Saúde</option>
+<option value="Outros">Outros</option>
+</select>
+<i data-lucide="chevron-down" class="select-icon"></i>
+</div>
+</div>
+<div class="form-group">
+<label for="limiteValor">Limite Máximo (R$)</label>
+<input type="text" inputmode="decimal" id="limiteValor" placeholder="500,00" required>
+</div>
+<button type="submit" class="btn-submit-large">Salvar Limite</button>
+</form>
+</div>
+</div>
+</main>
+
+<script src="api.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  lucide.createIcons();
+  const listView = document.getElementById("listView");
+  const formView = document.getElementById("formView");
+  const btnShowAddForm = document.getElementById("btnShowAddForm");
+  const btnHideAddForm = document.getElementById("btnHideAddForm");
+  const formOrcamento = document.getElementById("formOrcamento");
+  const orcamentosList = document.getElementById("orcamentosList");
+  const alertasContainer = document.getElementById("alertasContainer");
+
+  function pegarOrcamentos() {
+    return JSON.parse(localStorage.getItem("poupe_orcamentos") || "[]");
+  }
+  function salvarOrcamentos(o) {
+    localStorage.setItem("poupe_orcamentos", JSON.stringify(o));
+  }
+
+  btnShowAddForm.addEventListener("click", () => {
+    listView.classList.add("hidden");
+    formView.classList.remove("hidden");
+  });
+  btnHideAddForm.addEventListener("click", () => {
+    formView.classList.add("hidden");
+    listView.classList.remove("hidden");
+  });
+
+  function renderizar() {
+    const orcamentos = pegarOrcamentos();
+    const gastos = JSON.parse(localStorage.getItem("poupe_gastos") || "[]");
+
+    alertasContainer.innerHTML = "";
+
+    if (orcamentos.length === 0) {
+      orcamentosList.innerHTML = `<div class="empty-msg"><i data-lucide="pie-chart"></i><p>Nenhum limite definido.</p><small>Defina tetos de gastos para monitorar suas categorias.</small></div>`;
+      lucide.createIcons();
+      return;
+    }
+
+    let html = `<div style="display: grid; gap: 16px;">`;
+    let alertasHtml = "";
+
+    orcamentos.forEach(o => {
+      const gastoTotalCat = gastos.filter(g => g.categoria === o.categoria).reduce((acc, g) => acc + Number(g.valor), 0);
+      const percentual = o.limite > 0 ? Math.round((gastoTotalCat / o.limite) * 100) : 0;
+      
+      let corBarra = "var(--primary)";
+      let badgeTag = "";
+
+      if (percentual >= 100) {
+        corBarra = "#ef4444";
+        badgeTag = `<span style="background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Estourado!</span>`;
+        alertasHtml += `<div class="table-card" style="padding: 12px 16px; border-left: 4px solid #ef4444; background: #fff5f5; margin-bottom: 8px;">
+          <strong style="color: #dc2626;">🚨 Orçamento Estourado!</strong>
+          <p style="font-size: 13px; color: #7f1d1d; margin: 2px 0 0 0;">Você ultrapassou o limite estipulado para <b>${o.categoria}</b> (${percentual}% usado).</p>
+        </div>`;
+      } else if (percentual >= 80) {
+        corBarra = "#f59e0b";
+        badgeTag = `<span style="background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Atenção!</span>`;
+        alertasHtml += `<div class="table-card" style="padding: 12px 16px; border-left: 4px solid #f59e0b; background: #fffbeb; margin-bottom: 8px;">
+          <strong style="color: #d97706;">⚠️ Alerta de Gastos (80%)</strong>
+          <p style="font-size: 13px; color: #92400e; margin: 2px 0 0 0;">Você já consumiu ${percentual}% do teto mensal da categoria <b>${o.categoria}</b>.</p>
+        </div>`;
+      }
+
+      html += `<div class="table-card" style="padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div>
+            <strong>${o.categoria}</strong> ${badgeTag}
+          </div>
+          <button class="delete-btn" data-id="${o.id}" type="button"><i data-lucide="trash-2"></i></button>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;" class="text-muted">
+          <span>Gasto: <b>R$ ${gastoTotalCat.toFixed(2)}</b></span>
+          <span>Limite: <b>R$ ${Number(o.limite).toFixed(2)}</b> (${percentual}%)</span>
+        </div>
+        <div style="background: var(--border-color); border-radius: 8px; height: 10px; overflow: hidden;">
+          <div style="background: ${corBarra}; width: ${Math.min(100, percentual)}%; height: 100%;"></div>
+        </div>
+      </div>`;
+    });
+
+    html += `</div>`;
+    alertasContainer.innerHTML = alertasHtml;
+    orcamentosList.innerHTML = html;
+    lucide.createIcons();
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        salvarOrcamentos(pegarOrcamentos().filter(x => String(x.id) !== String(btn.dataset.id)));
+        renderizar();
+      });
+    });
+  }
+
+  formOrcamento.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const categoria = document.getElementById("catOrcamento").value;
+    const limite = Number(document.getElementById("limiteValor").value.replace(",", "."));
+
+    if (isNaN(limite)) { alert("Insira um valor válido!"); return; }
+
+    let orcamentos = pegarOrcamentos().filter(o => o.categoria !== categoria);
+    orcamentos.push({ id: Date.now(), categoria, limite });
+    salvarOrcamentos(orcamentos);
+    formOrcamento.reset();
+    formView.classList.add("hidden");
+    listView.classList.remove("hidden");
+    renderizar();
+  });
+
+  renderizar();
+});
+</script>
+</body>
+</html>

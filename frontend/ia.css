@@ -1,0 +1,622 @@
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+background: #fafbfa;
+color: #202124;
+height: 100vh;
+overflow: hidden;
+}
+
+.layout {
+display: flex;
+width: 100%;
+height: 100vh;
+}
+
+
+/* Menu Lateral */
+aside {
+width: 240px;
+background: var(--card-bg);
+border-right: 1px solid var(--border-color);
+padding: 24px 16px;
+display: flex;
+flex-direction: column;
+}
+
+.brand-wrapper {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 32px;
+padding: 0 8px;
+}
+
+.brand {
+font-size: 22px;
+font-weight: 700;
+color: var(--primary);
+}
+
+.menu-icon {
+cursor: pointer;
+color: var(--text-dark);
+width: 20px;
+height: 20px;
+}
+
+.nav-container {
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+flex: 1;
+}
+
+.nav-list {
+list-style: none;
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+
+.nav-item a {
+display: flex;
+align-items: center;
+gap: 12px;
+padding: 12px 16px;
+text-decoration: none;
+color: var(--text-muted);
+font-size: 15px;
+font-weight: 500;
+border-radius: 12px;
+transition: all 0.2s ease;
+}
+
+.nav-item a:hover {
+background-color: #f4f4f5;
+color: var(--text-dark);
+}
+
+.nav-item.active a {
+background-color: var(--primary-light);
+color: var(--primary);
+font-weight: 600;
+}
+
+.nav-bottom {
+margin-top: auto;
+padding-top: 24px;
+border-top: 1px solid var(--border-color);
+}
+
+/* =========================
+ÁREA PRINCIPAL
+========================= */
+
+main {
+flex: 1;
+height: 100vh;
+min-width: 0;
+
+display: flex;
+flex-direction: column;
+}
+
+
+/* =========================
+HEADER
+========================= */
+
+.top-header {
+height: 74px;
+
+background: #ffffff;
+border-bottom: 1px solid #e4e8e5;
+
+padding: 0 32px;
+
+display: flex;
+align-items: center;
+justify-content: space-between;
+}
+
+.user-info h2 {
+font-size: 17px;
+font-weight: 600;
+margin-bottom: 5px;
+}
+
+.month {
+display: flex;
+align-items: center;
+gap: 6px;
+
+font-size: 14px;
+color: #424744;
+}
+
+.month i {
+width: 15px;
+height: 15px;
+}
+
+.header-right {
+display: flex;
+align-items: center;
+gap: 23px;
+}
+
+.notification {
+position: relative;
+}
+
+.notification i {
+width: 21px;
+height: 21px;
+color: #17633f;
+}
+
+.profile {
+width: 35px;
+height: 35px;
+
+border-radius: 50%;
+
+background: #17633f;
+color: white;
+
+display: flex;
+align-items: center;
+justify-content: center;
+
+font-size: 14px;
+}
+
+
+/* =========================
+ÁREA DO CHAT
+========================= */
+
+.chat-area {
+flex: 1;
+
+display: flex;
+min-height: 0;
+
+padding: 24px 28px 18px;
+}
+
+.chat-content {
+flex: 1;
+
+display: flex;
+flex-direction: column;
+
+min-width: 0;
+}
+
+
+/* =========================
+TÍTULO
+========================= */
+
+.chat-title {
+display: flex;
+align-items: center;
+gap: 14px;
+
+margin-bottom: 20px;
+}
+
+.title-icon {
+width: 43px;
+height: 43px;
+
+border-radius: 50%;
+
+background: #eff7f3;
+color: #17633f;
+
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.title-icon i {
+width: 23px;
+height: 23px;
+}
+
+.chat-title h1 {
+font-size: 20px;
+font-weight: 600;
+
+display: flex;
+align-items: center;
+gap: 9px;
+}
+
+.chat-title h1 span {
+font-size: 9px;
+font-weight: 600;
+
+background: #dff1e7;
+color: #17633f;
+
+padding: 4px 7px;
+border-radius: 5px;
+}
+
+.chat-title p {
+font-size: 12px;
+color: #6d726f;
+margin-top: 5px;
+}
+
+
+/* =========================
+MENSAGENS
+========================= */
+
+.messages {
+flex: 1;
+overflow-y: auto;
+
+padding: 8px 0 20px;
+}
+
+.message {
+display: flex;
+align-items: flex-start;
+gap: 18px;
+}
+
+.message-avatar {
+width: 42px;
+height: 42px;
+min-width: 42px;
+
+border-radius: 50%;
+
+background: #eff7f3;
+color: #17633f;
+
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.message-avatar i {
+width: 22px;
+height: 22px;
+}
+
+.message-box {
+max-width: 455px;
+
+padding: 15px 20px;
+
+background: #ffffff;
+
+border: 1px solid #e0e5e2;
+
+border-radius: 16px;
+
+font-size: 13px;
+line-height: 1.7;
+
+color: #3e4441;
+}
+
+.message-box p + p {
+margin-top: 3px;
+}
+
+
+/* =========================
+INPUT
+========================= */
+
+.chat-input-area {
+width: 100%;
+
+margin-top: auto;
+}
+
+.input-box {
+width: 100%;
+height: 54px;
+
+background: #ffffff;
+
+border: 1px solid #dce1de;
+border-radius: 13px;
+
+display: flex;
+align-items: center;
+
+padding: 7px 8px 7px 15px;
+}
+
+.input-box textarea {
+flex: 1;
+
+height: 40px;
+
+border: none;
+outline: none;
+resize: none;
+
+padding-top: 11px;
+
+font-size: 13px;
+color: #333;
+
+font-family: inherit;
+}
+
+.input-box textarea::placeholder {
+color: #909692;
+}
+
+.input-box button {
+width: 38px;
+height: 38px;
+
+border: none;
+border-radius: 9px;
+
+background: #17633f;
+color: white;
+
+display: flex;
+align-items: center;
+justify-content: center;
+
+cursor: pointer;
+}
+
+.input-box button:hover {
+background: #124d31;
+}
+
+.input-box button i {
+width: 18px;
+height: 18px;
+}
+
+.disclaimer {
+font-size: 10px;
+color: #8a908d;
+
+margin-top: 10px;
+}
+
+
+/* =========================
+LATERAL DIREITA
+========================= */
+
+.right-panel {
+width: 365px;
+
+height: 100%;
+
+margin-left: 30px;
+
+display: flex;
+flex-direction: column;
+
+gap: 18px;
+
+padding-top: 0;
+
+border: none;
+background: transparent;
+}
+
+.side-card {
+background: #ffffff;
+
+border: 1px solid #e0e5e2;
+border-radius: 13px;
+
+padding: 17px;
+}
+
+.card-title {
+display: flex;
+align-items: center;
+gap: 10px;
+
+margin-bottom: 16px;
+}
+
+.card-title i {
+width: 18px;
+height: 18px;
+
+color: #17633f;
+}
+
+.card-title h3 {
+font-size: 13px;
+font-weight: 600;
+}
+
+
+/* =========================
+SUGESTÕES
+========================= */
+
+.suggestions-card {
+min-height: 300px;
+}
+
+.suggestion-placeholder {
+width: 100%;
+height: 41px;
+
+border: 1px solid #e2e6e4;
+border-radius: 9px;
+
+margin-bottom: 10px;
+}
+
+
+/* =========================
+RESUMO
+========================= */
+
+.summary-card {
+min-height: 190px;
+}
+
+.summary-placeholder {
+width: 100%;
+height: 32px;
+
+border-bottom: 1px solid #e7eae8;
+
+margin-bottom: 5px;
+}
+
+
+/* =========================
+LEMBRETE
+========================= */
+
+.remember-card {
+min-height: 100px;
+}
+
+
+/* =========================
+SCROLL
+========================= */
+
+.messages::-webkit-scrollbar {
+width: 4px;
+}
+
+.messages::-webkit-scrollbar-thumb {
+background: #dce3df;
+border-radius: 10px;
+}
+
+
+/* =========================
+RESPONSIVO
+========================= */
+
+@media (max-width: 1050px) {
+
+.right-panel {
+width: 280px;
+margin-left: 20px;
+}
+
+}
+
+@media (max-width: 800px) {
+
+.right-panel {
+display: none;
+}
+
+.chat-area {
+padding: 20px;
+}
+
+}
+
+@media (max-width: 600px) {
+
+aside {
+display: none;
+}
+
+.top-header {
+padding: 0 18px;
+}
+
+.chat-area {
+padding: 18px;
+}
+
+}
+/* --- TEMA ESCURO COMPLETO (SEM HOVER) --- */
+body.dark-mode {
+  --bg-color: #0f172a;
+  --card-bg: #1e293b;
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff;
+  --border-color: #334155;
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+/* 1. Força TODOS os elementos de texto e títulos para branco */
+body.dark-mode *,
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode p,
+body.dark-mode span,
+body.dark-mode div,
+body.dark-mode label {
+  color: #ffffff !important;
+}
+
+/* 2. Menu Lateral e fundo das áreas */
+body.dark-mode main,
+body.dark-mode aside {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* 3. Logo "poupe+" e topo */
+body.dark-mode .brand-name,
+body.dark-mode .logo-text,
+body.dark-mode .brand-wrapper * {
+  color: #ffffff !important;
+}
+
+/* 4. Links padrão do Menu Lateral */
+body.dark-mode .nav-item a,
+body.dark-mode .nav-item i,
+body.dark-mode .nav-item span {
+  color: #ffffff !important;
+}
+
+/* 5. Item Selecionado / Ativo no Menu (Fixo na página atual) */
+body.dark-mode .nav-item.active {
+  background-color: #065f46 !important; /* Fundo verde escuro estático */
+  border-radius: 8px;
+}
+
+body.dark-mode .nav-item.active *,
+body.dark-mode .nav-item.active a,
+body.dark-mode .nav-item.active i {
+  color: #ffffff !important; /* Texto branco na opção ativa */
+}
+
+/* 6. Cards da tela de Configurações e Alertas */
+body.dark-mode .setting-card,
+body.dark-mode .card,
+body.dark-mode .alert-card,
+body.dark-mode .summary-card {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* 7. Botão "Sair da conta" */
+body.dark-mode .setting-card.danger span,
+body.dark-mode .setting-card.danger i {
+  color: #f87171 !important;
+}

@@ -1,0 +1,439 @@
+:root {
+  --bg-color: #f8faf9;
+  --card-bg: #ffffff;
+  --primary: #024731;
+  --primary-hover: #013323;
+  --primary-light: #e6f0ec;
+  --text-dark: #1a1a1a;
+  --text-muted: #71717a;
+  --border-color: #f0f0f0;
+}
+
+*{
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background-color: var(--bg-color);
+  display: flex;
+  min-height: 100vh;
+  color: var(--text-dark);
+}
+
+/* Sidebar Navigation */
+aside {
+  width: 240px;
+  background: var(--card-bg);
+  border-right: 1px solid var(--border-color);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding: 0 8px;
+}
+
+.brand {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.menu-icon {
+  cursor: pointer;
+  color: var(--text-dark);
+  width: 20px;
+  height: 20px;
+}
+
+.nav-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+}
+
+.nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-item a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.nav-item a:hover {
+  background-color: #f4f4f5;
+  color: var(--text-dark);
+}
+
+.nav-item.active a {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.nav-bottom {
+  margin-top: auto;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Área Principal */
+main {
+  flex: 1;
+  padding: 40px;
+  max-width: 1000px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.btn-add {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+}
+
+.btn-add:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Seletor de Mês */
+.month-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 10px 20px;
+  border-radius: 12px;
+  max-width: 380px;
+  margin: 0 auto 24px auto;
+}
+
+.month-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+}
+
+.current-month {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+/* Resumo Central */
+.summary-card {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.summary-label {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-top: 4px;
+}
+
+/* Tabela de Receitas */
+.table-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.incomes-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.incomes-table th {
+  background-color: #fafafa;
+  padding: 16px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.incomes-table td {
+  padding: 18px 24px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.incomes-table tr:last-child td {
+  border-bottom: none;
+}
+
+.font-medium {
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.font-bold {
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-right {
+  text-align: right;
+}
+
+.action-header {
+  width: 40px;
+}
+
+.action-cell {
+  text-align: right;
+  padding-right: 16px !important;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.delete-btn:hover {
+  opacity: 1;
+}
+
+.empty-msg {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 32px !important;
+}
+
+/* Footer com Total */
+.total-footer-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.total-footer-card strong {
+  font-size: 20px;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Modal Pop-up */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal {
+  background: white;
+  padding: 28px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.modal h2 {
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-cancel {
+  background: #f4f4f5;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-save {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+/* --- TEMA ESCURO COMPLETO (SEM HOVER) --- */
+body.dark-mode {
+  --bg-color: #0f172a;
+  --card-bg: #1e293b;
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff;
+  --border-color: #334155;
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+/* 1. Força TODOS os elementos de texto e títulos para branco */
+body.dark-mode *,
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode p,
+body.dark-mode span,
+body.dark-mode div,
+body.dark-mode label {
+  color: #ffffff !important;
+}
+
+/* 2. Menu Lateral e fundo das áreas */
+body.dark-mode main,
+body.dark-mode aside {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* 3. Logo "poupe+" e topo */
+body.dark-mode .brand-name,
+body.dark-mode .logo-text,
+body.dark-mode .brand-wrapper * {
+  color: #ffffff !important;
+}
+
+/* 4. Links padrão do Menu Lateral */
+body.dark-mode .nav-item a,
+body.dark-mode .nav-item i,
+body.dark-mode .nav-item span {
+  color: #ffffff !important;
+}
+
+/* 5. Item Selecionado / Ativo no Menu (Fixo na página atual) */
+body.dark-mode .nav-item.active {
+  background-color: #065f46 !important; /* Fundo verde escuro estático */
+  border-radius: 8px;
+}
+
+body.dark-mode .nav-item.active *,
+body.dark-mode .nav-item.active a,
+body.dark-mode .nav-item.active i {
+  color: #ffffff !important; /* Texto branco na opção ativa */
+}
+
+/* 6. Cards da tela de Configurações e Alertas */
+body.dark-mode .setting-card,
+body.dark-mode .card,
+body.dark-mode .alert-card,
+body.dark-mode .summary-card {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* 7. Botão "Sair da conta" */
+body.dark-mode .setting-card.danger span,
+body.dark-mode .setting-card.danger i {
+  color: #f87171 !important;
+}

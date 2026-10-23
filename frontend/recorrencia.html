@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poupe+ | Recorrências</title>
+<link rel="stylesheet" href="gastos.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <aside>
+    <div class="brand-wrapper">
+    <div class="brand">poupe+</div>
+    <i data-lucide="menu" class="menu-icon"></i>
+    </div>
+    <nav class="nav-container">
+    <ul class="nav-list">
+    <li class="nav-item"><a href="inicio.html"><i data-lucide="home"></i>Início</a></li>
+    <li class="nav-item"><a href="gastos.html"><i data-lucide="calendar"></i>Gastos</a></li>
+    <li class="nav-item"><a href="receitas.html"><i data-lucide="wallet"></i>Receitas</a></li>
+    <li class="nav-item "><a href="caixa.html"><i data-lucide="landmark"></i>Caixa</a></li>
+    <li class="nav-item"><a href="cofrinho.html"><i data-lucide="piggy-bank"></i>Cofrinho</a></li>
+    <li class="nav-item"><a href="orcamento.html"><i data-lucide="pie-chart"></i>Orçamento</a></li>
+    <li class="nav-item active"><a href="recorrencia.html"><i data-lucide="repeat"></i>Recorrência</a></li>
+    <li class="nav-item"><a href="desperdicio.html"><i data-lucide="trending-down"></i>Desperdício</a></li>
+    <li class="nav-item"><a href="score.html"><i data-lucide="award"></i>Score</a></li>
+    <li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i>Relatórios</a></li>
+    </ul>
+    <ul class="nav-list nav-bottom">
+    <li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i>Configurações</a></li>
+    <li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i>Sair</a></li>
+    </ul>
+    </nav>
+    </aside>
+    
+<main>
+<div id="listView">
+<div class="header">
+<h1>Gastos e Receitas Recorrentes</h1>
+<button class="btn-add" id="btnShowAddForm" type="button"><i data-lucide="plus"></i>Nova Recorrência</button>
+</div>
+<div id="recorrenciasList"></div>
+</div>
+
+<div id="formView" class="hidden">
+<div class="form-header">
+<button type="button" class="btn-back" id="btnHideAddForm"><i data-lucide="arrow-left"></i>Voltar</button>
+<h1>Cadastrar Recorrência</h1>
+</div>
+<div class="form-card">
+<form id="formRecorrencia">
+<div class="form-group">
+<label for="recDescricao">Descrição</label>
+<input type="text" id="recDescricao" placeholder="Ex: Netflix, Aluguel, Academia" required>
+</div>
+<div class="form-group">
+<label for="recTipo">Tipo</label>
+<div class="select-wrapper">
+<select id="recTipo" required>
+<option value="Gasto Fixo">Gasto Fixo</option>
+<option value="Receita Fixa">Receita Fixa</option>
+</select>
+<i data-lucide="chevron-down" class="select-icon"></i>
+</div>
+</div>
+<div class="form-group">
+<label for="recValor">Valor (R$)</label>
+<input type="text" inputmode="decimal" id="recValor" placeholder="0,00" required>
+</div>
+<div class="form-group">
+<label for="recDia">Dia do Vencimento/Recebimento</label>
+<input type="number" min="1" max="31" id="recDia" placeholder="Ex: 5" required>
+</div>
+<button type="submit" class="btn-submit-large">Salvar Recorrência</button>
+</form>
+</div>
+</div>
+</main>
+
+<script src="api.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  lucide.createIcons();
+  const listView = document.getElementById("listView");
+  const formView = document.getElementById("formView");
+  const btnShowAddForm = document.getElementById("btnShowAddForm");
+  const btnHideAddForm = document.getElementById("btnHideAddForm");
+  const formRecorrencia = document.getElementById("formRecorrencia");
+  const recorrenciasList = document.getElementById("recorrenciasList");
+
+  function pegarRecorrencias() {
+    return JSON.parse(localStorage.getItem("poupe_recorrencias") || "[]");
+  }
+  function salvarRecorrencias(r) {
+    localStorage.setItem("poupe_recorrencias", JSON.stringify(r));
+  }
+
+  btnShowAddForm.addEventListener("click", () => {
+    listView.classList.add("hidden");
+    formView.classList.remove("hidden");
+  });
+  btnHideAddForm.addEventListener("click", () => {
+    formView.classList.add("hidden");
+    listView.classList.remove("hidden");
+  });
+
+  function renderizar() {
+    const lista = pegarRecorrencias();
+    if (lista.length === 0) {
+      recorrenciasList.innerHTML = `<div class="empty-msg"><i data-lucide="repeat"></i><p>Nenhuma recorrência cadastrada.</p><small>Automatize o controle de contas e salários mensais.</small></div>`;
+      lucide.createIcons();
+      return;
+    }
+
+    let html = `<div class="table-card"><table class="expenses-table"><thead><tr><th>Descrição</th><th>Tipo</th><th>Dia</th><th class="text-right">Valor</th><th></th></tr></thead><tbody>`;
+    lista.forEach(r => {
+      const corTexto = r.tipo === 'Receita Fixa' ? 'color: #059669;' : '';
+      html += `<tr>
+        <td class="font-medium">${r.descricao}</td>
+        <td><span class="cat-badge"><i data-lucide="calendar"></i>${r.tipo}</span></td>
+        <td class="text-muted">Todo dia ${r.dia}</td>
+        <td class="text-right font-bold" style="${corTexto}">R$ ${Number(r.valor).toFixed(2)}</td>
+        <td class="text-right"><button class="delete-btn" data-id="${r.id}" type="button"><i data-lucide="trash-2"></i></button></td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+    recorrenciasList.innerHTML = html;
+    lucide.createIcons();
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        salvarRecorrencias(pegarRecorrencias().filter(x => String(x.id) !== String(btn.dataset.id)));
+        renderizar();
+      });
+    });
+  }
+
+  formRecorrencia.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const descricao = document.getElementById("recDescricao").value.trim();
+    const tipo = document.getElementById("recTipo").value;
+    const valor = Number(document.getElementById("recValor").value.replace(",", "."));
+    const dia = document.getElementById("recDia").value;
+
+    if (!descricao || isNaN(valor)) { alert("Preencha corretamente!"); return; }
+
+    const lista = pegarRecorrencias();
+    lista.push({ id: Date.now(), descricao, tipo, valor, dia });
+    salvarRecorrencias(lista);
+    formRecorrencia.reset();
+    formView.classList.add("hidden");
+    listView.classList.remove("hidden");
+    renderizar();
+  });
+
+  renderizar();
+});
+</script>
+</body>
+</html>

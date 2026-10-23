@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poupe+ | Análise de Desperdício</title>
+<link rel="stylesheet" href="gastos.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <aside>
+    <div class="brand-wrapper">
+    <div class="brand">poupe+</div>
+    <i data-lucide="menu" class="menu-icon"></i>
+    </div>
+    <nav class="nav-container">
+    <ul class="nav-list">
+    <li class="nav-item"><a href="inicio.html"><i data-lucide="home"></i>Início</a></li>
+    <li class="nav-item"><a href="gastos.html"><i data-lucide="calendar"></i>Gastos</a></li>
+    <li class="nav-item"><a href="receitas.html"><i data-lucide="wallet"></i>Receitas</a></li>
+    <li class="nav-item "><a href="caixa.html"><i data-lucide="landmark"></i>Caixa</a></li>
+    <li class="nav-item"><a href="cofrinho.html"><i data-lucide="piggy-bank"></i>Cofrinho</a></li>
+    <li class="nav-item"><a href="orcamento.html"><i data-lucide="pie-chart"></i>Orçamento</a></li>
+    <li class="nav-item"><a href="recorrencia.html"><i data-lucide="repeat"></i>Recorrência</a></li>
+    <li class="nav-item active"><a href="desperdicio.html"><i data-lucide="trending-down"></i>Desperdício</a></li>
+    <li class="nav-item"><a href="score.html"><i data-lucide="award"></i>Score</a></li>
+    <li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i>Relatórios</a></li>
+    </ul>
+    <ul class="nav-list nav-bottom">
+    <li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i>Configurações</a></li>
+    <li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i>Sair</a></li>
+    </ul>
+    </nav>
+    </aside>
+    
+<main>
+<div class="header">
+<h1>Análise Inteligente de Desperdícios</h1>
+</div>
+
+<div class="table-card" style="padding: 24px; margin-bottom: 24px;">
+<h3 style="font-size: 16px; margin-bottom: 8px;">Dica Inteligente do Poupe+</h3>
+<p class="text-muted" id="dicaDesperdicio" style="font-size: 14px;">Analisando seu histórico de transações...</p>
+</div>
+
+<div id="alertasInteligentes" style="margin-bottom: 24px;"></div>
+
+<div id="desperdiciosContainer"></div>
+</main>
+
+<script src="api.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  lucide.createIcons();
+  const container = document.getElementById("desperdiciosContainer");
+  const dica = document.getElementById("dicaDesperdicio");
+  const alertasEl = document.getElementById("alertasInteligentes");
+
+  const gastos = JSON.parse(localStorage.getItem("poupe_gastos") || "[]");
+  
+  // Categorias de consumo não-essencial
+  const categoriasAnalise = ["Lazer", "Compras", "Outros"];
+  const filtrados = gastos.filter(g => categoriasAnalise.includes(g.categoria));
+  const totalDesperdicio = filtrados.reduce((acc, g) => acc + Number(g.valor), 0);
+
+  dica.textContent = `Identificamos R$ ${totalDesperdicio.toFixed(2)} acumulados em Lazer, Compras e Outros. Cortando 30% dessas despesas, você economiza R$ ${(totalDesperdicio * 0.3).toFixed(2)} este mês!`;
+
+  // 1. Identificação de Gastos Duplicados
+  let duplicados = [];
+  for (let i = 0; i < gastos.length; i++) {
+    for (let j = i + 1; j < gastos.length; j++) {
+      if (
+        gastos[i].descricao.toLowerCase().trim() === gastos[j].descricao.toLowerCase().trim() &&
+        Number(gastos[i].valor) === Number(gastos[j].valor)
+      ) {
+        duplicados.push(gastos[i]);
+      }
+    }
+  }
+
+  // 2. Assinaturas Prováveis (Palavras-chave comuns)
+  const palavrasAssinatura = ["netflix", "spotify", "prime", "hbo", "disney", "gympass", "academia", "icloud", "youtube"];
+  const assinaturas = gastos.filter(g => palavrasAssinatura.some(p => g.descricao.toLowerCase().includes(p)));
+
+  let htmlAlertas = "";
+  if (duplicados.length > 0) {
+    htmlAlertas += `<div class="table-card" style="padding: 16px; margin-bottom: 12px; border-left: 4px solid #ef4444; background: #fff5f5;">
+      <strong style="color: #dc2626;">⚠️ Gastos Duplicados Identificados:</strong>
+      <p style="font-size: 13px; color: #7f1d1d; margin-top: 4px;">Encontramos ${duplicados.length} registro(s) com valor e descrição idênticos. Verifique se foram lançados repetidamente.</p>
+    </div>`;
+  }
+
+  if (assinaturas.length > 0) {
+    htmlAlertas += `<div class="table-card" style="padding: 16px; margin-bottom: 12px; border-left: 4px solid #3b82f6; background: #eff6ff;">
+      <strong style="color: #1d4ed8;">📺 Assinaturas e Recorrências Detectadas:</strong>
+      <p style="font-size: 13px; color: #1e40af; margin-top: 4px;">Você possui ${assinaturas.length} serviço(s) recorrente(s) (Ex: ${assinaturas.map(a => a.descricao).join(", ")}). Avalie se todos estão em uso ativo.</p>
+    </div>`;
+  }
+
+  alertasEl.innerHTML = htmlAlertas;
+
+  if (filtrados.length === 0) {
+    container.innerHTML = `<div class="empty-msg"><i data-lucide="check-circle"></i><p>Nenhum gasto não-essencial identificado.</p></div>`;
+  } else {
+    let html = `<div class="table-card"><table class="expenses-table"><thead><tr><th>Descrição</th><th>Categoria</th><th class="text-right">Valor</th></tr></thead><tbody>`;
+    filtrados.forEach(g => {
+      html += `<tr>
+        <td class="font-medium">${g.descricao}</td>
+        <td><span class="cat-badge"><i data-lucide="tag"></i>${g.categoria}</span></td>
+        <td class="text-right font-bold text-muted">R$ ${Number(g.valor).toFixed(2)}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
+  }
+  lucide.createIcons();
+});
+</script>
+</body>
+</html>

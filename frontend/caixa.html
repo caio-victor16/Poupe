@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poupe+ | Caixa e Radar</title>
+<link rel="stylesheet" href="gastos.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <aside>
+    <div class="brand-wrapper">
+    <div class="brand">poupe+</div>
+    <i data-lucide="menu" class="menu-icon"></i>
+    </div>
+    <nav class="nav-container">
+    <ul class="nav-list">
+    <li class="nav-item"><a href="inicio.html"><i data-lucide="home"></i>Início</a></li>
+    <li class="nav-item"><a href="gastos.html"><i data-lucide="calendar"></i>Gastos</a></li>
+    <li class="nav-item"><a href="receitas.html"><i data-lucide="wallet"></i>Receitas</a></li>
+    <li class="nav-item active"><a href="caixa.html"><i data-lucide="landmark"></i>Caixa</a></li>
+    <li class="nav-item"><a href="cofrinho.html"><i data-lucide="piggy-bank"></i>Cofrinho</a></li>
+    <li class="nav-item"><a href="orcamento.html"><i data-lucide="pie-chart"></i>Orçamento</a></li>
+    <li class="nav-item"><a href="recorrencia.html"><i data-lucide="repeat"></i>Recorrência</a></li>
+    <li class="nav-item"><a href="desperdicio.html"><i data-lucide="trending-down"></i>Desperdício</a></li>
+    <li class="nav-item"><a href="score.html"><i data-lucide="award"></i>Score</a></li>
+    <li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i>Relatórios</a></li>
+    </ul>
+    <ul class="nav-list nav-bottom">
+    <li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i>Configurações</a></li>
+    <li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i>Sair</a></li>
+    </ul>
+    </nav>
+    </aside>
+    
+
+<main>
+<div id="listView">
+<div class="header">
+<h1>Minhas Contas / Caixa</h1>
+<button class="btn-add" id="btnShowAddForm" type="button"><i data-lucide="plus"></i>Adicionar Conta</button>
+</div>
+
+<!-- Módulo Radar de Caixa -->
+<div class="table-card" style="padding: 20px; margin-bottom: 24px; background: #faf5ff; border: 1px solid #e9d5ff;">
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+  <h3 style="font-size: 16px; color: #6b21a8; margin: 0; display: flex; align-items: center; gap: 6px;">
+    <i data-lucide="radar"></i> Radar de Caixa
+  </h3>
+  <span style="font-size: 12px; background: #f3e8ff; color: #7e22ce; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Previsão</span>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+  <div>
+    <small class="text-muted">Saldo Livre (após boletos)</small>
+    <h4 id="radarSaldoLivre" style="font-size: 18px; color: #581c87; margin-top: 2px;">R$ 0,00</h4>
+  </div>
+  <div>
+    <small class="text-muted">Dias de Fôlego</small>
+    <h4 id="radarDiasDura" style="font-size: 18px; color: #581c87; margin-top: 2px;">-- dias</h4>
+  </div>
+  <div>
+    <small class="text-muted">Limite para Gastar/Dia</small>
+    <h4 id="radarGastoDiario" style="font-size: 18px; color: #581c87; margin-top: 2px;">R$ 0,00/dia</h4>
+  </div>
+</div>
+</div>
+
+<div class="table-card" style="margin-bottom: 24px; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+<div>
+<p class="text-muted" style="font-size: 14px; margin-bottom: 4px;">Saldo Total Consolidado</p>
+<strong id="saldoTotalGeral" style="font-size: 24px; color: var(--primary);">R$ 0,00</strong>
+</div>
+<i data-lucide="wallet" style="width: 36px; height: 36px; color: var(--primary);"></i>
+</div>
+
+<div id="contasList"></div>
+</div>
+
+<div id="formView" class="hidden">
+<div class="form-header">
+<button type="button" class="btn-back" id="btnHideAddForm"><i data-lucide="arrow-left"></i>Voltar</button>
+<h1>Cadastrar Conta Bancária</h1>
+</div>
+<div class="form-card">
+<form id="formConta">
+<div class="form-group">
+<label for="nomeConta">Nome da Conta (Ex: Nubank, Carteira, Itaú)</label>
+<input type="text" id="nomeConta" placeholder="Ex: Conta Corrente Nubank" required>
+</div>
+<div class="form-group">
+<label for="tipoConta">Tipo</label>
+<div class="select-wrapper">
+<select id="tipoConta" required>
+<option value="Corrente">Conta Corrente</option>
+<option value="Poupança">Poupança</option>
+<option value="Dinheiro Físico">Dinheiro Físico</option>
+<option value="Investimentos">Investimentos</option>
+</select>
+<i data-lucide="chevron-down" class="select-icon"></i>
+</div>
+</div>
+<div class="form-group">
+<label for="saldoInicial">Saldo Inicial (R$)</label>
+<input type="text" inputmode="decimal" id="saldoInicial" placeholder="0,00" required>
+</div>
+<button type="submit" class="btn-submit-large">Salvar Conta</button>
+</form>
+</div>
+</div>
+</main>
+
+<script src="api.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  lucide.createIcons();
+  const listView = document.getElementById("listView");
+  const formView = document.getElementById("formView");
+  const btnShowAddForm = document.getElementById("btnShowAddForm");
+  const btnHideAddForm = document.getElementById("btnHideAddForm");
+  const formConta = document.getElementById("formConta");
+  const contasList = document.getElementById("contasList");
+  const saldoTotalGeral = document.getElementById("saldoTotalGeral");
+
+  function pegarContas() {
+    return JSON.parse(localStorage.getItem("poupe_contas") || "[]");
+  }
+  function salvarContas(c) {
+    localStorage.setItem("poupe_contas", JSON.stringify(c));
+  }
+
+  btnShowAddForm.addEventListener("click", () => {
+    listView.classList.add("hidden");
+    formView.classList.remove("hidden");
+    document.getElementById("nomeConta").focus();
+  });
+
+  btnHideAddForm.addEventListener("click", () => {
+    formView.classList.add("hidden");
+    listView.classList.remove("hidden");
+  });
+
+  function calcularRadar(saldoTotal) {
+    const recorrencias = JSON.parse(localStorage.getItem("poupe_recorrencias") || "[]");
+    const gastos = JSON.parse(localStorage.getItem("poupe_gastos") || "[]");
+    
+    const hoje = new Date();
+    const diaAtual = hoje.getDate();
+    const totalDiasNoMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+    const diasRestantes = Math.max(1, totalDiasNoMes - diaAtual);
+
+    // Boletos pendentes neste mês (vencimento após a data de hoje)
+    const boletosPendentes = recorrencias
+      .filter(r => r.tipo === "Gasto Fixo" && Number(r.dia) >= diaAtual)
+      .reduce((acc, r) => acc + Number(r.valor), 0);
+
+    const saldoLivre = Math.max(0, saldoTotal - boletosPendentes);
+
+    // Média diária de gastos
+    const totalGastosMes = gastos.reduce((acc, g) => acc + Number(g.valor), 0);
+    const mediaDiariaGasto = diaAtual > 0 ? (totalGastosMes / diaAtual) : 0;
+
+    let diasDura = mediaDiariaGasto > 0 ? Math.floor(saldoLivre / mediaDiariaGasto) : diasRestantes;
+    let limiteGastoDiario = saldoLivre / diasRestantes;
+
+    document.getElementById("radarSaldoLivre").textContent = saldoLivre.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+    document.getElementById("radarDiasDura").textContent = `${diasDura} dias`;
+    document.getElementById("radarGastoDiario").textContent = `${limiteGastoDiario.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}/dia`;
+  }
+
+  function renderizar() {
+    const contas = pegarContas();
+    if (contas.length === 0) {
+      contasList.innerHTML = `<div class="empty-msg"><i data-lucide="landmark"></i><p>Nenhuma conta cadastrada.</p><small>Adicione suas contas para gerenciar o saldo.</small></div>`;
+      saldoTotalGeral.textContent = "R$ 0,00";
+      calcularRadar(0);
+      lucide.createIcons();
+      return;
+    }
+
+    let total = 0;
+    let html = `<div class="table-card"><table class="expenses-table"><thead><tr><th>Conta</th><th>Tipo</th><th class="text-right">Saldo</th><th></th></tr></thead><tbody>`;
+    
+    contas.forEach(c => {
+      total += Number(c.saldo);
+      html += `<tr>
+        <td class="font-medium">${c.nome}</td>
+        <td><span class="cat-badge"><i data-lucide="credit-card"></i>${c.tipo}</span></td>
+        <td class="text-right font-bold">${Number(c.saldo).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</td>
+        <td class="text-right"><button class="delete-btn" data-id="${c.id}" type="button"><i data-lucide="trash-2"></i></button></td>
+      </tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+    contasList.innerHTML = html;
+    saldoTotalGeral.textContent = total.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+    
+    calcularRadar(total);
+    lucide.createIcons();
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        if (confirm("Deseja excluir esta conta?")) {
+          salvarContas(pegarContas().filter(x => String(x.id) !== String(id)));
+          renderizar();
+        }
+      });
+    });
+  }
+
+  formConta.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const nome = document.getElementById("nomeConta").value.trim();
+    const tipo = document.getElementById("tipoConta").value;
+    const saldo = Number(document.getElementById("saldoInicial").value.replace(",", "."));
+
+    if (!nome || isNaN(saldo)) { alert("Preencha os campos corretamente!"); return; }
+
+    const contas = pegarContas();
+    contas.push({ id: Date.now(), nome, tipo, saldo });
+    salvarContas(contas);
+    formConta.reset();
+    formView.classList.add("hidden");
+    listView.classList.remove("hidden");
+    renderizar();
+  });
+
+  renderizar();
+});
+</script>
+</body>
+</html>
