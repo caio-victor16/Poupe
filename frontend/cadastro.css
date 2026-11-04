@@ -1,0 +1,48 @@
+/* Importa todas as regras da página de login para manter 100% de consistência visual */
+@import url('login.css');
+
+/* Estilos adicionais específicos do formulário de cadastro */
+#signupForm {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Espaçamento entre os campos de entrada */
+#signupForm .input-group {
+  margin-bottom: 14px;
+}
+
+/* Destaque visual ao focar num campo com erro de validação (ex: senha curta) */
+.input-wrapper input:invalid:focus {
+  border-color: #ef4444;
+}
+
+/* Destaque visual ao focar num campo preenchido corretamente */
+.input-wrapper input:valid:focus {
+  border-color: #0b3c26;
+}
+
+/* Opcional: Se adicionares uma caixa de seleção de Termos e Condições */
+.terms-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+.terms-group input[type="checkbox"] {
+  accent-color: #0b3c26;
+  cursor: pointer;
+}
+
+.terms-group a {
+  color: #0b3c26;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.terms-group a:hover {
+  text-decoration: underline;
+}
