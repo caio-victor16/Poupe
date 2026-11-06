@@ -7,9 +7,9 @@
   <!-- Link para o CSS separado -->
   <link rel="stylesheet" href="inicio.css">
   <!-- Ícones do Lucide -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="vendor/lucide-1.69.0.min.js"></script>
   <!-- Chart.js para os gráficos -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="vendor/chart-4.6.1.umd.min.js"></script>
 </head>
 <body>
 
@@ -48,7 +48,7 @@
           <button id="prevMonthBtn" class="month-nav-btn" title="Mês Anterior">
             <i data-lucide="chevron-left"></i>
           </button>
-          <span id="currentMonthYear">Agosto de 2026</span>
+          <span id="currentMonthYear"></span>
           <button id="nextMonthBtn" class="month-nav-btn" title="Próximo Mês">
             <i data-lucide="chevron-right"></i>
           </button>
@@ -57,7 +57,7 @@
 
       <div class="user-actions">
         <button class="icon-btn" title="Notificações"><i data-lucide="bell"></i></button>
-        <div class="avatar-circle">D</div>
+        <div class="avatar-circle"></div>
       </div>
     </header>
 
@@ -138,7 +138,7 @@
           <div class="card-header-flex">
             <h3>Evolução dos gastos</h3>
             <div class="mini-select">
-              <span id="miniSelectMonth">Agosto de 2026</span>
+              <span id="miniSelectMonth"></span>
             </div>
           </div>
           
@@ -154,5 +154,243 @@
 
   <!-- Script separado com as interações JavaScript -->
   <script src="api.js"></script>
+  <script>
+  // =====================================================================
+  // Painel inicial (item 11). Dados: cópias locais de gastos e receitas,
+  // atualizadas do servidor por DadosLocais.sincronizar().
+  // =====================================================================
+
+  const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho',
+    'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  const CORES_CATEGORIAS = ['#7c3aed', '#06b6d4', '#f59e0b', '#ef4444', '#10b981',
+    '#3b82f6', '#ec4899', '#84cc16', '#f97316', '#64748b'];
+
+  // ---- cálculos (funções puras) ---------------------------------------
+
+  function chaveMes(ano, mes) {
+    return `${ano}-${String(mes + 1).padStart(2, '0')}`;      // mes: 0 a 11
+  }
+
+  function doMes(itens, campoData, ano, mes) {
+    const prefixo = chaveMes(ano, mes);
+    return (Array.isArray(itens) ? itens : []).filter(i => String(i && i[campoData] || '').startsWith(prefixo));
+  }
+
+  function somar(itens, campoValor) {
+    // Soma em centavos para não acumular erro de ponto flutuante.
+    const centavos = itens.reduce((t, i) => t + Math.round((Number(i[campoValor]) || 0) * 100), 0);
+    return centavos / 100;
+  }
+
+  function resumoDoMes(gastos, receitas, ano, mes) {
+    const totalGastos = somar(doMes(gastos, 'data', ano, mes), 'valor');
+    const totalReceitas = somar(doMes(receitas, 'date', ano, mes), 'amount');
+    return { receitas: totalReceitas, gastos: totalGastos, saldo: Math.round((totalReceitas - totalGastos) * 100) / 100 };
+  }
+
+  function gastosPorCategoria(gastosDoMes) {
+    const totais = {};
+    gastosDoMes.forEach(g => {
+      const categoria = g.categoria || 'Outros';
+      totais[categoria] = (totais[categoria] || 0) + Math.round((Number(g.valor) || 0) * 100);
+    });
+    const geral = Object.values(totais).reduce((a, b) => a + b, 0);
+    return Object.entries(totais)
+      .map(([categoria, centavos]) => ({
+        categoria,
+        total: centavos / 100,
+        percentual: geral > 0 ? Math.round((centavos / geral) * 100) : 0,
+      }))
+      .sort((a, b) => b.total - a.total || a.categoria.localeCompare(b.categoria));
+  }
+
+  // Gasto acumulado dia a dia no mês (gráfico de linha). Dias depois de
+  // `ateDia` ficam null (no mês atual, a linha para em hoje).
+  function evolucaoDiaria(gastosDoMes, ano, mes, ateDia = 31) {
+    const dias = new Date(ano, mes + 1, 0).getDate();
+    const porDia = new Array(dias).fill(0);
+    gastosDoMes.forEach(g => {
+      const dia = Number(String(g.data).slice(8, 10));
+      if (dia >= 1 && dia <= dias) porDia[dia - 1] += Math.round((Number(g.valor) || 0) * 100);
+    });
+    let acumulado = 0;
+    return {
+      rotulos: porDia.map((_, i) => String(i + 1)),
+      valores: porDia.map((c, i) => (i + 1 > ateDia ? null : (acumulado += c) / 100)),
+    };
+  }
+
+  // Percentual do mês já decorrido: 100 para meses passados, 0 para futuros.
+  function progressoDoMes(hoje, ano, mes) {
+    const atual = hoje.getFullYear() * 12 + hoje.getMonth();
+    const escolhido = ano * 12 + mes;
+    if (escolhido < atual) return 100;
+    if (escolhido > atual) return 0;
+    const dias = new Date(ano, mes + 1, 0).getDate();
+    return Math.round((hoje.getDate() / dias) * 100);
+  }
+
+  function ultimosGastos(gastosDoMes, quantidade = 5) {
+    return [...gastosDoMes]
+      .sort((a, b) => String(b.data).localeCompare(String(a.data)) || (Number(b.id) || 0) - (Number(a.id) || 0))
+      .slice(0, quantidade);
+  }
+
+  function dinheiro(valor) {
+    return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function dataCurta(iso) {
+    const [, mes, dia] = String(iso || '').split('-');
+    return dia && mes ? `${dia}/${mes}` : '';
+  }
+
+  // ---- interface ------------------------------------------------------
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const usuarioId = Sessao.exigirLogin();
+    if (!usuarioId) return;
+    if (window.lucide) lucide.createIcons();
+
+    const hoje = new Date();
+    let ano = hoje.getFullYear();
+    let mes = hoje.getMonth();
+    let graficoCategorias = null;
+    let graficoEvolucao = null;
+
+    const el = (id) => document.getElementById(id);
+
+    function lerCopia(nome) {
+      try {
+        const lista = JSON.parse(localStorage.getItem(chaveUsuario(nome)) || '[]');
+        return Array.isArray(lista) ? lista : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function desenharGraficos(categorias, evolucao) {
+      if (!window.Chart) return;          // sem Chart.js (offline): números e legenda continuam
+      if (graficoCategorias) graficoCategorias.destroy();
+      if (graficoEvolucao) graficoEvolucao.destroy();
+      graficoCategorias = new Chart(el('categoryChart'), {
+        type: 'doughnut',
+        data: {
+          labels: categorias.map(c => c.categoria),
+          datasets: [{
+            data: categorias.length ? categorias.map(c => c.total) : [1],
+            backgroundColor: categorias.length ? categorias.map((_, i) => CORES_CATEGORIAS[i % CORES_CATEGORIAS.length]) : ['#e5e7eb'],
+            borderWidth: 0,
+          }],
+        },
+        options: { locale: 'pt-BR', cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: categorias.length > 0 } } },
+      });
+      graficoEvolucao = new Chart(el('evolutionChart'), {
+        type: 'line',
+        data: {
+          labels: evolucao.rotulos,
+          datasets: [{ data: evolucao.valores, borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.1)',
+                       fill: true, tension: 0.3, pointRadius: 0 }],
+        },
+        options: { locale: 'pt-BR', maintainAspectRatio: false, plugins: { legend: { display: false } },
+                   scales: { y: { beginAtZero: true } } },
+      });
+    }
+
+    function renderizar() {
+      const gastos = lerCopia('poupe_gastos');
+      const receitas = lerCopia('poupePlus_incomes');
+      const gastosMes = doMes(gastos, 'data', ano, mes);
+      const resumo = resumoDoMes(gastos, receitas, ano, mes);
+      const categorias = gastosPorCategoria(gastosMes);
+      const progresso = progressoDoMes(new Date(), ano, mes);
+      const titulo = `${NOMES_MESES[mes]} de ${ano}`;
+
+      el('currentMonthYear').textContent = titulo;
+      el('miniSelectMonth').textContent = titulo;
+      el('totalIncomes').textContent = dinheiro(resumo.receitas);
+      el('totalExpenses').textContent = dinheiro(resumo.gastos);
+      el('balance').textContent = dinheiro(resumo.saldo);
+      el('balance').style.color = resumo.saldo < 0 ? '#dc2626' : '';
+      el('donutTotalDisplay').textContent = dinheiro(resumo.gastos);
+      el('monthProgressText').textContent = `${progresso}% do mês concluído`;
+      el('monthProgressBar').style.width = `${progresso}%`;
+
+      el('chartLegend').innerHTML = categorias.length
+        ? categorias.map((c, i) => `
+            <div class="legend-item">
+              <div class="legend-left"><span class="dot" style="background: ${CORES_CATEGORIAS[i % CORES_CATEGORIAS.length]}"></span>${textoHTML(c.categoria)}</div>
+              <span class="legend-pct">${c.percentual}%</span>
+            </div>`).join('')
+        : '<p class="text-muted">Sem gastos neste mês.</p>';
+
+      const recentes = ultimosGastos(gastosMes);
+      el('recentExpensesList').innerHTML = recentes.length
+        ? recentes.map(g => {
+            const indice = categorias.findIndex(c => c.categoria === (g.categoria || 'Outros'));
+            const cor = CORES_CATEGORIAS[Math.max(0, indice) % CORES_CATEGORIAS.length];
+            return `
+              <li class="expense-item">
+                <div class="expense-left">
+                  <div class="icon-box" style="background: ${cor}22; color: ${cor};"><i data-lucide="receipt"></i></div>
+                  <div class="expense-info">
+                    <strong>${textoHTML(g.descricao || g.categoria || 'Gasto')}</strong>
+                    <span>${textoHTML(g.categoria || 'Outros')} · ${textoHTML(dataCurta(g.data))}</span>
+                  </div>
+                </div>
+                <span class="expense-amount">- ${dinheiro(g.valor)}</span>
+              </li>`;
+          }).join('')
+        : '<li class="text-muted">Nenhum gasto neste mês.</li>';
+
+      const agora = new Date();
+      const mesAtual = ano === agora.getFullYear() && mes === agora.getMonth();
+      desenharGraficos(categorias, evolucaoDiaria(gastosMes, ano, mes, mesAtual ? agora.getDate() : 31));
+      if (window.lucide) lucide.createIcons();
+    }
+
+    el('prevMonthBtn').addEventListener('click', () => {
+      mes -= 1;
+      if (mes < 0) { mes = 11; ano -= 1; }
+      renderizar();
+    });
+    el('nextMonthBtn').addEventListener('click', () => {
+      mes += 1;
+      if (mes > 11) { mes = 0; ano += 1; }
+      renderizar();
+    });
+
+    const sino = document.querySelector('.icon-btn[title="Notificações"]');
+    if (sino) sino.addEventListener('click', () => { window.location.href = 'alertas.html'; });
+
+    renderizar();                         // cópia local enquanto busca o servidor
+    await DadosLocais.sincronizar();
+    renderizar();
+
+    // Nome no cumprimento e no avatar; alertas não lidos no sino.
+    try {
+      const perfil = await UsuarioAPI.obterPerfil(usuarioId);
+      const primeiroNome = String(perfil.nome || '').trim().split(/\s+/)[0];
+      if (primeiroNome) {
+        document.querySelector('.user-greeting h1').textContent = `Olá, ${primeiroNome} 👋`;
+        document.querySelector('.avatar-circle').textContent = primeiroNome.charAt(0).toUpperCase();
+      }
+    } catch (erro) {
+      console.error('Não foi possível carregar o perfil:', erro);
+    }
+    try {
+      const alertas = await AlertaAPI.listarPorUsuario(usuarioId);
+      const naoLidos = alertas.filter(a => !a.visualizado).length;
+      if (sino && naoLidos > 0) {
+        sino.title = `Notificações (${naoLidos} não lida${naoLidos > 1 ? 's' : ''})`;
+        sino.insertAdjacentHTML('beforeend',
+          `<span class="badge-alertas" style="position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:999px;font-size:10px;padding:1px 5px;">${naoLidos}</span>`);
+        sino.style.position = 'relative';
+      }
+    } catch (erro) {
+      console.error('Não foi possível carregar os alertas:', erro);
+    }
+  });
+  </script>
 </body>
 </html>

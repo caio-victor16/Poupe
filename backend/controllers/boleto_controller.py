@@ -45,6 +45,9 @@ class BoletoController:
             if boleto is None:
                 return jsonify({"erro": "Boleto não encontrado."}), 404
             return jsonify(boleto), 200
+        except ValueError as erro:
+            db.session.rollback()
+            return jsonify({"erro": str(erro)}), 400
         except SQLAlchemyError:
             db.session.rollback()
             return jsonify({"erro": "Erro ao atualizar boleto."}), 500

@@ -6,7 +6,7 @@
   <title>Poupe+ | Minhas Metas</title>
 
   <link rel="stylesheet" href="metas.css">
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="vendor/lucide-1.69.0.min.js"></script>
   <script src="api.js" defer></script>
 
 
@@ -116,242 +116,150 @@
 
 
   <script>
+    // Metas ficam no servidor (tabela meta). A cópia local poupePlus_goals_u<ID>
+    // guarda o formato antigo { title, target, current } para a exibição.
+    // Atenção: api.js é carregado com "defer" e só existe depois do parse; por
+    // isso nada aqui chama funções dele fora de eventos ou do DOMContentLoaded
+    // (antes, a página quebrava ao abrir com "chaveUsuario is not defined").
 
-    let goals =
-      JSON.parse(localStorage.getItem(chaveUsuario('poupePlus_goals'))) || [];
+    const goalsGrid = document.getElementById('goalsGrid');
+    const modal = document.getElementById('modal');
 
-    const goalsGrid =
-      document.getElementById('goalsGrid');
+    function pegarMetasCopia() {
+      try {
+        const lista = JSON.parse(localStorage.getItem(chaveUsuario('poupePlus_goals')) || '[]');
+        return Array.isArray(lista) ? lista : [];
+      } catch (e) {
+        return [];
+      }
+    }
 
-    const modal =
-      document.getElementById('modal');
-
+    function formatMoney(value) {
+      return Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
 
     function renderGoals() {
-
       if (!goalsGrid) return;
-
+      const goals = pegarMetasCopia();
       goalsGrid.innerHTML = '';
 
       if (goals.length === 0) {
-
         goalsGrid.innerHTML = `
           <div class="empty-state">
             <p>Você ainda não tem metas cadastradas.</p>
-            <p>
-              Clique em <strong>"+ Nova meta"</strong>
-              acima para criar a primeira!
-            </p>
-          </div>
-        `;
-
+            <p>Clique em <strong>"+ Nova meta"</strong> acima para criar a primeira!</p>
+          </div>`;
         return;
       }
 
-
-      goals.forEach((goal, index) => {
-
-        const percentage =
-          Math.min(
-            Math.round(
-              (goal.current / goal.target) * 100
-            ),
-            100
-          );
-
-
-        const card =
-          document.createElement('div');
-
+      goals.forEach(goal => {
+        const alvo = Number(goal.target) || 0;
+        const percentage = alvo > 0 ? Math.max(0, Math.min(Math.round((Number(goal.current) / alvo) * 100), 100)) : 0;
+        const local = goal.origem === 'servidor' ? '' : ' (neste navegador)';
+        const card = document.createElement('div');
         card.className = 'goal-card';
-
-
         card.innerHTML = `
-
-          <button
-            class="delete-btn"
-            onclick="deleteGoal(${index})"
-            title="Excluir meta"
-          >
-            <i
-              data-lucide="trash-2"
-              style="width: 16px; height: 16px;"
-            ></i>
+          <button class="delete-btn" data-id="${textoHTML(goal.id)}" title="Excluir meta">
+            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
           </button>
-
-
           <div class="card-top">
-
             <div>
-
-              <div class="goal-title">
-                ${goal.title}
-              </div>
-
-              <div class="goal-value">
-                R$ ${formatMoney(goal.target)}
-              </div>
-
+              <div class="goal-title">${textoHTML(goal.title)}${textoHTML(local)}</div>
+              <div class="goal-value">R$ ${formatMoney(goal.target)}</div>
             </div>
-
-
-            <div class="icon-wrapper">
-
-              <i data-lucide="piggy-bank"></i>
-
-            </div>
-
+            <div class="icon-wrapper"><i data-lucide="piggy-bank"></i></div>
           </div>
-
-
-          <div class="goal-subtext">
-            R$ ${formatMoney(goal.current)}
-            /
-            R$ ${formatMoney(goal.target)}
-          </div>
-
-
+          <div class="goal-subtext">R$ ${formatMoney(goal.current)} / R$ ${formatMoney(goal.target)}</div>
           <div class="progress-container">
-
             <div class="progress-bar">
-
-              <div
-                class="progress-fill"
-                style="width: ${percentage}%"
-              ></div>
-
+              <div class="progress-fill" style="width: ${percentage}%"></div>
             </div>
-
-            <div class="progress-percentage">
-              ${percentage}%
-            </div>
-
-          </div>
-
-        `;
-
-
+            <div class="progress-percentage">${percentage}%</div>
+          </div>`;
         goalsGrid.appendChild(card);
-
       });
 
-
-      if (window.lucide) {
-        lucide.createIcons();
-      }
-
+      goalsGrid.querySelectorAll('.delete-btn').forEach(botao => {
+        botao.addEventListener('click', () => deleteGoal(botao.dataset.id));
+      });
+      if (window.lucide) lucide.createIcons();
     }
-
-
-    function formatMoney(value) {
-
-      return Number(value || 0)
-        .toLocaleString(
-          'pt-BR',
-          {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          }
-        );
-
-    }
-
 
     function openModal() {
-
-      if (modal) {
-        modal.classList.add('active');
-      }
-
+      if (modal) modal.classList.add('active');
     }
-
 
     function closeModal() {
-
-      if (modal) {
-        modal.classList.remove('active');
-      }
-
-      const form =
-        document.getElementById('goalForm');
-
-      if (form) {
-        form.reset();
-      }
-
+      if (modal) modal.classList.remove('active');
+      const form = document.getElementById('goalForm');
+      if (form) form.reset();
     }
 
-
-    function saveGoal(e) {
-
+    async function saveGoal(e) {
       e.preventDefault();
+      const titulo = document.getElementById('goalTitle').value.trim();
+      const alvo = parseFloat(document.getElementById('targetValue').value);
+      const guardado = parseFloat(document.getElementById('currentValue').value);
 
+      if (!titulo || !(alvo > 0) || !(guardado >= 0)) {
+        alert('Informe o nome, um valor objetivo maior que zero e um valor guardado não negativo.');
+        return;
+      }
 
-      const title =
-        document.getElementById('goalTitle').value;
-
-
-      const target =
-        parseFloat(
-          document.getElementById('targetValue').value
-        ) || 0;
-
-
-      const current =
-        parseFloat(
-          document.getElementById('currentValue').value
-        ) || 0;
-
-
-      goals.push({
-        title,
-        target,
-        current
-      });
-
-
-      localStorage.setItem(
-        'poupePlus_goals',
-        JSON.stringify(goals)
-      );
-
-
+      const botao = document.querySelector('#goalForm button[type="submit"]');
+      botao.disabled = true;
+      try {
+        await MetaAPI.criar({ titulo, valor_alvo: alvo, valor_guardado: guardado });
+      } catch (erro) {
+        alert(`Não foi possível salvar: ${erro.message}`);
+        return;
+      } finally {
+        botao.disabled = false;
+      }
       closeModal();
+      await DadosLocais.sincronizarMetas();
       renderGoals();
-
     }
 
-
-    function deleteGoal(index) {
-
-      if (
-        confirm(
-          'Tem certeza que deseja apagar essa meta?'
-        )
-      ) {
-
-        goals.splice(index, 1);
-
-
-        localStorage.setItem(
-          'poupePlus_goals',
-          JSON.stringify(goals)
-        );
-
-
-        renderGoals();
-
+    async function deleteGoal(id) {
+      const meta = pegarMetasCopia().find(g => String(g.id) === String(id));
+      if (!meta || !confirm('Tem certeza que deseja apagar essa meta?')) return;
+      if (meta.origem === 'servidor') {
+        try {
+          await MetaAPI.excluir(meta.id_meta);
+        } catch (erro) {
+          alert(`Não foi possível excluir: ${erro.message}`);
+          return;
+        }
+        await DadosLocais.sincronizarMetas();
+      } else {
+        localStorage.setItem(chaveUsuario('poupePlus_goals'),
+          JSON.stringify(pegarMetasCopia().filter(g => String(g.id) !== String(id))));
       }
-
+      renderGoals();
     }
 
-
-    document.addEventListener(
-      'DOMContentLoaded',
-      () => {
-        renderGoals();
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!Sessao.exigirLogin()) return;
+      renderGoals();                       // mostra a cópia local enquanto busca o servidor
+      // Metas antigas (gravadas sem id) ganham um id local para poderem ser excluídas.
+      const copia = pegarMetasCopia();
+      if (copia.some(g => g.origem !== 'servidor' && g.id == null)) {
+        localStorage.setItem(chaveUsuario('poupePlus_goals'), JSON.stringify(
+          copia.map((g, i) => g.origem !== 'servidor' && g.id == null ? { ...g, id: `local-${i}` } : g)));
       }
-    );
+      const migradas = await migrarItensLocais('poupePlus_goals', g => {
+        const alvo = Number(g.target), guardado = Number(g.current) || 0;
+        return g.title && alvo > 0 && guardado >= 0
+          ? { titulo: String(g.title), valor_alvo: alvo, valor_guardado: guardado }
+          : null;
+      }, MetaAPI.criar);
+      await DadosLocais.sincronizarMetas();
+      renderGoals();
+      if (migradas > 0) {
+        alert(`${migradas} meta(s) salvas só neste navegador foram enviadas ao servidor.`);
+      }
+    });
 
   </script>
 

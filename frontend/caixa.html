@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Poupe+ | Caixa e Radar</title>
 <link rel="stylesheet" href="gastos.css">
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="vendor/lucide-1.69.0.min.js"></script>
 </head>
 <body>
   <aside>
@@ -112,8 +112,16 @@
 
 <script src="api.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   lucide.createIcons();
+  // Atualiza as cópias locais com o servidor (item 10). Contas antigas que só
+  // existiam neste navegador são enviadas ao servidor (item 10c).
+  await DadosLocais.sincronizar();
+  const contasMigradas = await migrarItensLocais("poupe_contas", c => {
+    const saldo = Number(c.saldo);
+    return c.nome && c.tipo && Number.isFinite(saldo) ? { nome: c.nome, tipo: c.tipo, saldo } : null;
+  }, ContaAPI.criar);
+  await DadosLocais.sincronizarContas();
   const listView = document.getElementById("listView");
   const formView = document.getElementById("formView");
   const btnShowAddForm = document.getElementById("btnShowAddForm");
@@ -141,11 +149,14 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function calcularRadar(saldoTotal) {
-    const recorrencias = JSON.parse(llocalStorage.getItem(chaveUsuario("poupe_recorrencias")) || "[]");
-    const gastos = JSON.parse(localStorage.getItem(chaveUsuario("poupe_contas")) || "[]");
-    
+    const recorrencias = JSON.parse(localStorage.getItem(chaveUsuario("poupe_recorrencias")) || "[]");
     const hoje = new Date();
     const diaAtual = hoje.getDate();
+
+    // Gastos do mês atual (cache salvo pela tela de gastos; data no formato AAAA-MM-DD).
+    const mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
+    const gastos = JSON.parse(localStorage.getItem(chaveUsuario("poupe_gastos")) || "[]")
+      .filter(g => String(g.data || "").startsWith(mesAtual));
     const totalDiasNoMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
     const diasRestantes = Math.max(1, totalDiasNoMes - diaAtual);
 
@@ -184,10 +195,10 @@ document.addEventListener("DOMContentLoaded", () => {
     contas.forEach(c => {
       total += Number(c.saldo);
       html += `<tr>
-        <td class="font-medium">${c.nome}</td>
-        <td><span class="cat-badge"><i data-lucide="credit-card"></i>${c.tipo}</span></td>
+        <td class="font-medium">${textoHTML(c.nome)}</td>
+        <td><span class="cat-badge"><i data-lucide="credit-card"></i>${textoHTML(c.tipo)}</span></td>
         <td class="text-right font-bold">${Number(c.saldo).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</td>
-        <td class="text-right"><button class="delete-btn" data-id="${c.id}" type="button"><i data-lucide="trash-2"></i></button></td>
+        <td class="text-right"><button class="delete-btn" data-id="${textoHTML(c.id)}" type="button"><i data-lucide="trash-2"></i></button></td>
       </tr>`;
     });
 
@@ -199,17 +210,27 @@ document.addEventListener("DOMContentLoaded", () => {
     lucide.createIcons();
 
     document.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const id = btn.dataset.id;
-        if (confirm("Deseja excluir esta conta?")) {
+        if (!confirm("Deseja excluir esta conta?")) return;
+        const conta = pegarContas().find(x => String(x.id) === String(id));
+        if (conta && conta.origem === "servidor") {
+          try {
+            await ContaAPI.excluir(conta.id_conta);
+          } catch (erro) {
+            alert(`Não foi possível excluir: ${erro.message}`);
+            return;
+          }
+          await DadosLocais.sincronizarContas();
+        } else {
           salvarContas(pegarContas().filter(x => String(x.id) !== String(id)));
-          renderizar();
         }
+        renderizar();
       });
     });
   }
 
-  formConta.addEventListener("submit", (e) => {
+  formConta.addEventListener("submit", async (e) => {
     e.preventDefault();
     const nome = document.getElementById("nomeConta").value.trim();
     const tipo = document.getElementById("tipoConta").value;
@@ -217,9 +238,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!nome || isNaN(saldo)) { alert("Preencha os campos corretamente!"); return; }
 
-    const contas = pegarContas();
-    contas.push({ id: Date.now(), nome, tipo, saldo });
-    salvarContas(contas);
+    const botao = formConta.querySelector('button[type="submit"]');
+    botao.disabled = true;
+    try {
+      await ContaAPI.criar({ nome, tipo, saldo });
+    } catch (erro) {
+      alert(`Não foi possível salvar: ${erro.message}`);
+      return;
+    } finally {
+      botao.disabled = false;
+    }
+    await DadosLocais.sincronizarContas();
     formConta.reset();
     formView.classList.add("hidden");
     listView.classList.remove("hidden");
@@ -227,6 +256,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   renderizar();
+  if (contasMigradas > 0) {
+    alert(`${contasMigradas} conta(s) salvas só neste navegador foram enviadas ao servidor.`);
+  }
 });
 </script>
 </body>

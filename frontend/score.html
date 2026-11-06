@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Poupe+ | Score de Saúde Financeira</title>
 <link rel="stylesheet" href="gastos.css">
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="vendor/lucide-1.69.0.min.js"></script>
 </head>
 <body>
 
@@ -54,8 +54,10 @@
 
 <script src="api.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   lucide.createIcons();
+  // Atualiza as cópias locais de gastos e recorrências com o servidor (item 10).
+  await DadosLocais.sincronizar();
 
   const gastos = JSON.parse(localStorage.getItem(chaveUsuario("poupe_gastos")) || "[]");
   const receitas = JSON.parse(localStorage.getItem(chaveUsuario("poupePlus_incomes")) || "[]")
@@ -91,7 +93,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let orcamentoAcima80 = false;
 
   orcamentos.forEach(o => {
-    const gastoCat = gastos.filter(g => g.categoria === o.categoria).reduce((acc, g) => acc + Number(g.valor), 0);
+    // Orçamentos do servidor já trazem o gasto do mês atual da categoria.
+    const gastoCat = o.gasto_mes != null
+      ? Number(o.gasto_mes)
+      : gastos.filter(g => g.categoria === o.categoria).reduce((acc, g) => acc + Number(g.valor), 0);
     if (gastoCat > o.limite) estourouOrcamento = true;
     else if (gastoCat >= o.limite * 0.8) orcamentoAcima80 = true;
   });

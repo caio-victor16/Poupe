@@ -47,6 +47,9 @@ class GastoController:
             if gasto is None:
                 return jsonify({"erro": "Gasto não encontrado."}), 404
             return jsonify(gasto), 200
+        except ValueError as erro:
+            db.session.rollback()
+            return jsonify({"erro": str(erro)}), 400
         except SQLAlchemyError:
             db.session.rollback()
             return jsonify({"erro": "Erro ao atualizar gasto."}), 500
@@ -71,7 +74,10 @@ class GastoController:
         data_fim = request.args.get("fim")
         if not data_inicio or not data_fim:
             return jsonify({"erro": "Informe os parâmetros 'inicio' e 'fim'."}), 400
-        return jsonify(self.service.gastos_por_periodo(id_usuario, data_inicio, data_fim)), 200
+        try:
+            return jsonify(self.service.gastos_por_periodo(id_usuario, data_inicio, data_fim)), 200
+        except ValueError as erro:
+            return jsonify({"erro": str(erro)}), 400
 
     def verificar_limite(self, id_usuario):
         resultado = self.service.verificar_limite(id_usuario)

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Poupe+ | Análise de Desperdício</title>
 <link rel="stylesheet" href="gastos.css">
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="vendor/lucide-1.69.0.min.js"></script>
 </head>
 <body>
   <aside>
@@ -50,8 +50,10 @@
 
 <script src="api.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   lucide.createIcons();
+  // Atualiza as cópias locais de gastos e recorrências com o servidor (item 10).
+  await DadosLocais.sincronizar();
   const container = document.getElementById("desperdiciosContainer");
   const dica = document.getElementById("dicaDesperdicio");
   const alertasEl = document.getElementById("alertasInteligentes");
@@ -93,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (assinaturas.length > 0) {
     htmlAlertas += `<div class="table-card" style="padding: 16px; margin-bottom: 12px; border-left: 4px solid #3b82f6; background: #eff6ff;">
       <strong style="color: #1d4ed8;">📺 Assinaturas e Recorrências Detectadas:</strong>
-      <p style="font-size: 13px; color: #1e40af; margin-top: 4px;">Você possui ${assinaturas.length} serviço(s) recorrente(s) (Ex: ${assinaturas.map(a => a.descricao).join(", ")}). Avalie se todos estão em uso ativo.</p>
+      <p style="font-size: 13px; color: #1e40af; margin-top: 4px;">Você possui ${assinaturas.length} serviço(s) recorrente(s) (Ex: ${textoHTML(assinaturas.map(a => a.descricao).join(", "))}). Avalie se todos estão em uso ativo.</p>
     </div>`;
   }
 
@@ -105,8 +107,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let html = `<div class="table-card"><table class="expenses-table"><thead><tr><th>Descrição</th><th>Categoria</th><th class="text-right">Valor</th></tr></thead><tbody>`;
     filtrados.forEach(g => {
       html += `<tr>
-        <td class="font-medium">${g.descricao}</td>
-        <td><span class="cat-badge"><i data-lucide="tag"></i>${g.categoria}</span></td>
+        <td class="font-medium">${textoHTML(g.descricao)}</td>
+        <td><span class="cat-badge"><i data-lucide="tag"></i>${textoHTML(g.categoria)}</span></td>
         <td class="text-right font-bold text-muted">R$ ${Number(g.valor).toFixed(2)}</td>
       </tr>`;
     });

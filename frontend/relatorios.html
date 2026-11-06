@@ -9,8 +9,8 @@
   <link rel="stylesheet" href="relatorios.css">
 
   <!-- Lucide Icons & Chart.js -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="vendor/lucide-1.69.0.min.js"></script>
+  <script src="vendor/chart-4.6.1.umd.min.js"></script>
   <script src="api.js" defer></script>
 </head>
 
@@ -208,8 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return gastosCache;
   }
 
-  // Buscar Receitas do localStorage
-  // (o backend ainda não tem tabela/rota de receitas nesta versão)
+  // Receitas: cópia local atualizada do servidor por DadosLocais.sincronizarReceitas()
   function getReceitas() {
     try {
       return JSON.parse(localStorage.getItem(chaveUsuario('poupePlus_incomes'))) || [];
@@ -373,6 +372,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Inicialização
+  await DadosLocais.sincronizarReceitas();
   await carregarDadosBase();
   updateMonthPicker();
   renderReport();

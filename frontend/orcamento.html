@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Poupe+ | Orçamento por Categoria</title>
 <link rel="stylesheet" href="gastos.css">
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="vendor/lucide-1.69.0.min.js"></script>
 </head>
 <body>
 
@@ -57,15 +57,7 @@
 <div class="form-group">
 <label for="catOrcamento">Categoria</label>
 <div class="select-wrapper">
-<select id="catOrcamento" required>
-<option value="Alimentação">Alimentação</option>
-<option value="Transporte">Transporte</option>
-<option value="Compras">Compras</option>
-<option value="Lazer">Lazer</option>
-<option value="Estudos">Estudos</option>
-<option value="Saúde">Saúde</option>
-<option value="Outros">Outros</option>
-</select>
+<select id="catOrcamento" required></select>
 <i data-lucide="chevron-down" class="select-icon"></i>
 </div>
 </div>
@@ -81,8 +73,48 @@
 
 <script src="api.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+// Orçamentos ficam no servidor (orcamento_categoria). O servidor calcula o gasto
+// do mês atual por categoria; o navegador só exibe.
+
+// Nomes antigos do formulário local que não existem no banco.
+const ALIASES_CATEGORIA = { "estudos": "educação" };
+
+function normalizarCategoria(nome) {
+  const chave = String(nome || "").trim().toLowerCase();
+  return ALIASES_CATEGORIA[chave] || chave;
+}
+
+function salvarOrcamentosLocais(lista) {
+  localStorage.setItem(chaveUsuario("poupe_orcamentos"), JSON.stringify(lista));
+}
+
+// Limites antigos do navegador vão para o servidor; cada um só sai daqui
+// depois que o servidor confirmar. Categoria sem correspondência fica local.
+async function migrarOrcamentosLocais(idCategoriaPorNome) {
+  const antigos = itensLocais("poupe_orcamentos");
+  const migrados = new Set();
+  for (const o of antigos) {
+    const idCategoria = idCategoriaPorNome[normalizarCategoria(o.categoria)];
+    const limite = Number(o.limite);
+    if (!idCategoria || !(limite > 0)) continue;
+    try {
+      await OrcamentoAPI.definir({ id_categoria: Number(idCategoria), limite });
+      migrados.add(String(o.id));
+    } catch (erro) {
+      console.error("Não foi possível migrar o orçamento local:", erro);
+    }
+  }
+  if (migrados.size) {
+    salvarOrcamentosLocais(itensLocais("poupe_orcamentos").filter(o => !migrados.has(String(o.id))));
+  }
+  return migrados.size;
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
   lucide.createIcons();
+  const usuarioId = Sessao.exigirLogin();
+  if (!usuarioId) return;
+
   const listView = document.getElementById("listView");
   const formView = document.getElementById("formView");
   const btnShowAddForm = document.getElementById("btnShowAddForm");
@@ -90,12 +122,41 @@ document.addEventListener("DOMContentLoaded", () => {
   const formOrcamento = document.getElementById("formOrcamento");
   const orcamentosList = document.getElementById("orcamentosList");
   const alertasContainer = document.getElementById("alertasContainer");
+  const categoriaInput = document.getElementById("catOrcamento");
+  const botaoSalvar = formOrcamento.querySelector('button[type="submit"]');
+
+  let idCategoriaPorNome = {};
+  let avisoSincronizacao = "";
 
   function pegarOrcamentos() {
-    return JSON.parse(localStorage.getItem(chaveUsuario("poupe_orcamentos")) || "[]");
+    try {
+      return JSON.parse(localStorage.getItem(chaveUsuario("poupe_orcamentos")) || "[]");
+    } catch (e) {
+      return [];
+    }
   }
-  function salvarOrcamentos(o) {
-    localStorage.setItem(chaveUsuario("poupe_orcamentos"), JSON.stringify(o));
+
+  async function carregarCategorias() {
+    try {
+      const categorias = await CategoriaAPI.listar();
+      idCategoriaPorNome = {};
+      categoriaInput.innerHTML = "";
+      categorias.forEach(cat => {
+        idCategoriaPorNome[String(cat.nome).toLowerCase()] = cat.id_categoria;
+        const opcao = document.createElement("option");
+        opcao.value = cat.id_categoria;
+        opcao.textContent = capitalizar(cat.nome);
+        categoriaInput.appendChild(opcao);
+      });
+    } catch (erro) {
+      console.error("Erro ao carregar categorias:", erro);
+    }
+  }
+
+  async function atualizar() {
+    const ok = await DadosLocais.sincronizar();
+    avisoSincronizacao = ok ? "" : "Não foi possível falar com o servidor; mostrando a última cópia salva.";
+    renderizar();
   }
 
   btnShowAddForm.addEventListener("click", () => {
@@ -108,24 +169,39 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function renderizar() {
-    const orcamentos = pegarOrcamentos();
-    const gastos = JSON.parse(localStorage.getItem(chaveUsuario("poupe_gastos")) || "[]");
+    const todos = pegarOrcamentos();
+    const orcamentos = todos.filter(o => o.origem === "servidor");
+    const pendentes = todos.filter(o => o.origem !== "servidor");
 
-    alertasContainer.innerHTML = "";
+    let avisos = avisoSincronizacao
+      ? `<p class="text-muted" style="margin-bottom: 12px;">${textoHTML(avisoSincronizacao)}</p>`
+      : "";
+    if (pendentes.length > 0) {
+      avisos += `<div class="table-card" style="padding: 12px 16px; margin-bottom: 12px;">
+        <strong>Limites salvos só neste navegador</strong>
+        <p class="text-muted" style="font-size: 13px; margin: 2px 0 8px 0;">A categoria não existe no banco. Defina de novo escolhendo uma categoria da lista.</p>
+        ${pendentes.map(o => `<div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>${textoHTML(o.categoria)} — R$ ${Number(o.limite).toFixed(2)}</span>
+          <button class="delete-btn" data-id="${textoHTML(o.id)}" type="button"><i data-lucide="trash-2"></i></button>
+        </div>`).join("")}
+      </div>`;
+    }
 
     if (orcamentos.length === 0) {
+      alertasContainer.innerHTML = avisos;
       orcamentosList.innerHTML = `<div class="empty-msg"><i data-lucide="pie-chart"></i><p>Nenhum limite definido.</p><small>Defina tetos de gastos para monitorar suas categorias.</small></div>`;
       lucide.createIcons();
+      ligarExclusao();
       return;
     }
 
     let html = `<div style="display: grid; gap: 16px;">`;
-    let alertasHtml = "";
+    let alertasHtml = avisos;
 
     orcamentos.forEach(o => {
-      const gastoTotalCat = gastos.filter(g => g.categoria === o.categoria).reduce((acc, g) => acc + Number(g.valor), 0);
-      const percentual = o.limite > 0 ? Math.round((gastoTotalCat / o.limite) * 100) : 0;
-      
+      const gastoMes = Number(o.gasto_mes) || 0;
+      const percentual = Math.round(Number(o.percentual) || 0);
+
       let corBarra = "var(--primary)";
       let badgeTag = "";
 
@@ -134,30 +210,30 @@ document.addEventListener("DOMContentLoaded", () => {
         badgeTag = `<span style="background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Estourado!</span>`;
         alertasHtml += `<div class="table-card" style="padding: 12px 16px; border-left: 4px solid #ef4444; background: #fff5f5; margin-bottom: 8px;">
           <strong style="color: #dc2626;">🚨 Orçamento Estourado!</strong>
-          <p style="font-size: 13px; color: #7f1d1d; margin: 2px 0 0 0;">Você ultrapassou o limite estipulado para <b>${o.categoria}</b> (${percentual}% usado).</p>
+          <p style="font-size: 13px; color: #7f1d1d; margin: 2px 0 0 0;">Você ultrapassou o limite estipulado para <b>${textoHTML(o.categoria)}</b> (${percentual}% usado).</p>
         </div>`;
       } else if (percentual >= 80) {
         corBarra = "#f59e0b";
         badgeTag = `<span style="background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Atenção!</span>`;
         alertasHtml += `<div class="table-card" style="padding: 12px 16px; border-left: 4px solid #f59e0b; background: #fffbeb; margin-bottom: 8px;">
           <strong style="color: #d97706;">⚠️ Alerta de Gastos (80%)</strong>
-          <p style="font-size: 13px; color: #92400e; margin: 2px 0 0 0;">Você já consumiu ${percentual}% do teto mensal da categoria <b>${o.categoria}</b>.</p>
+          <p style="font-size: 13px; color: #92400e; margin: 2px 0 0 0;">Você já consumiu ${percentual}% do teto mensal da categoria <b>${textoHTML(o.categoria)}</b>.</p>
         </div>`;
       }
 
       html += `<div class="table-card" style="padding: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
           <div>
-            <strong>${o.categoria}</strong> ${badgeTag}
+            <strong>${textoHTML(o.categoria)}</strong> ${badgeTag}
           </div>
-          <button class="delete-btn" data-id="${o.id}" type="button"><i data-lucide="trash-2"></i></button>
+          <button class="delete-btn" data-id="${textoHTML(o.id)}" type="button"><i data-lucide="trash-2"></i></button>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;" class="text-muted">
-          <span>Gasto: <b>R$ ${gastoTotalCat.toFixed(2)}</b></span>
+          <span>Gasto no mês: <b>R$ ${gastoMes.toFixed(2)}</b></span>
           <span>Limite: <b>R$ ${Number(o.limite).toFixed(2)}</b> (${percentual}%)</span>
         </div>
         <div style="background: var(--border-color); border-radius: 8px; height: 10px; overflow: hidden;">
-          <div style="background: ${corBarra}; width: ${Math.min(100, percentual)}%; height: 100%;"></div>
+          <div style="background: ${corBarra}; width: ${Math.min(100, Math.max(0, percentual))}%; height: 100%;"></div>
         </div>
       </div>`;
     });
@@ -166,32 +242,58 @@ document.addEventListener("DOMContentLoaded", () => {
     alertasContainer.innerHTML = alertasHtml;
     orcamentosList.innerHTML = html;
     lucide.createIcons();
+    ligarExclusao();
+  }
 
+  function ligarExclusao() {
     document.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        salvarOrcamentos(pegarOrcamentos().filter(x => String(x.id) !== String(btn.dataset.id)));
-        renderizar();
+      btn.addEventListener("click", async () => {
+        const item = pegarOrcamentos().find(x => String(x.id) === String(btn.dataset.id));
+        if (!item) return;
+        if (item.origem === "servidor") {
+          if (!confirm(`Excluir o limite de ${item.categoria}?`)) return;
+          try {
+            await OrcamentoAPI.excluir(item.id_orcamento);
+          } catch (erro) {
+            alert(`Não foi possível excluir: ${erro.message}`);
+            return;
+          }
+        } else {
+          salvarOrcamentosLocais(itensLocais("poupe_orcamentos").filter(x => String(x.id) !== String(item.id)));
+        }
+        await atualizar();
       });
     });
   }
 
-  formOrcamento.addEventListener("submit", (e) => {
+  formOrcamento.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const categoria = document.getElementById("catOrcamento").value;
+    const idCategoria = Number(categoriaInput.value);
     const limite = Number(document.getElementById("limiteValor").value.replace(",", "."));
 
-    if (isNaN(limite)) { alert("Insira um valor válido!"); return; }
+    if (!idCategoria || !(limite > 0)) { alert("Escolha a categoria e um limite maior que zero."); return; }
 
-    let orcamentos = pegarOrcamentos().filter(o => o.categoria !== categoria);
-    orcamentos.push({ id: Date.now(), categoria, limite });
-    salvarOrcamentos(orcamentos);
+    botaoSalvar.disabled = true;
+    try {
+      await OrcamentoAPI.definir({ id_categoria: idCategoria, limite });   // substitui o limite anterior da categoria
+    } catch (erro) {
+      alert(`Não foi possível salvar: ${erro.message}`);
+      return;
+    } finally {
+      botaoSalvar.disabled = false;
+    }
     formOrcamento.reset();
     formView.classList.add("hidden");
     listView.classList.remove("hidden");
-    renderizar();
+    await atualizar();
   });
 
-  renderizar();
+  renderizar();                       // mostra a cópia local enquanto busca o servidor
+  await carregarCategorias();
+  await migrarOrcamentosLocais(idCategoriaPorNome);
+  await atualizar();
+  // Registra na tela de Alertas as categorias em risco (o servidor evita repetir no mesmo dia).
+  OrcamentoAPI.verificar(usuarioId).catch(erro => console.error("Erro ao verificar orçamentos:", erro));
 });
 </script>
 </body>

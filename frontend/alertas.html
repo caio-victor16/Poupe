@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="alertas.css">
 
     <!-- Ícones do Lucide -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="vendor/lucide-1.69.0.min.js"></script>
 
     <script src="api.js" defer></script>
 </head>
@@ -183,12 +183,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 <div class="alert-content">
 
-                    <h3>${alert.title}</h3>
+                    <h3>${textoHTML(alert.title)}</h3>
 
-                    <p>${alert.description}</p>
+                    <p>${textoHTML(alert.description)}</p>
 
                     <span class="alert-date">
-                        ${alert.date}
+                        ${textoHTML(alert.date)}
                     </span>
 
                 </div>
@@ -256,4 +256,4 @@ if (localStorage.getItem("poupe-theme") === "dark") {
 </script>
 
 </body>
-</html>
+</html>

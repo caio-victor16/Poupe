@@ -1,10 +1,31 @@
 import os
+import secrets
+from datetime import timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
 class Config:
+    # Ativação explícita somente para desenvolvimento local.
+    DEBUG = os.getenv("POUPE_DEBUG", "false").strip().lower() == "true"
+    IA_LIMITE_MINUTO = int(os.getenv("IA_LIMITE_MINUTO", "5"))
+    IA_LIMITE_DIA = int(os.getenv("IA_LIMITE_DIA", "50"))
+    IA_LIMITE_GLOBAL_MINUTO = int(os.getenv("IA_LIMITE_GLOBAL_MINUTO", "30"))
+    IA_LIMITE_GLOBAL_DIA = int(os.getenv("IA_LIMITE_GLOBAL_DIA", "500"))
+    # REV-001: falhas de login (e de senha atual) por e-mail e por IP na janela;
+    # cadastros por IP por hora. Passou disso, 429 com Retry-After.
+    LOGIN_FALHAS_EMAIL = int(os.getenv("LOGIN_FALHAS_EMAIL", "5"))
+    LOGIN_FALHAS_IP = int(os.getenv("LOGIN_FALHAS_IP", "30"))
+    LOGIN_JANELA_MINUTOS = int(os.getenv("LOGIN_JANELA_MINUTOS", "15"))
+    CADASTROS_IP_HORA = int(os.getenv("CADASTROS_IP_HORA", "10"))
+    # Sem configuração, reiniciar o servidor encerra as sessões locais.
+    SECRET_KEY = os.getenv("SECRET_KEY") or secrets.token_hex(32)
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Strict"
+    SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
+    SESSION_REFRESH_EACH_REQUEST = False
     MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
     MYSQL_PORT = os.getenv("MYSQL_PORT", "3306")
     MYSQL_USER = os.getenv("MYSQL_USER", "root")

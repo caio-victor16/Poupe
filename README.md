@@ -67,8 +67,8 @@ O backend também expõe rotas de atualização, boletos, orçamento, recorrênc
 
 ### ⚠️ Limitações conhecidas
 
-- **Sem autenticação real**: o login apenas confere e-mail/senha e guarda o `id` do usuário no `localStorage` do navegador. Não há token/sessão — qualquer pessoa com o `id` de outro usuário pode, hoje, chamar a API diretamente e acessar os dados dele. Não usar em produção sem implementar autenticação (ex.: JWT) antes.
-- **Senha em texto puro**: por decisão do time nesta fase do projeto, as senhas não são criptografadas (hash) no banco.
+- **Autenticação**: login com sessão no servidor (cookie HttpOnly, revogada no logout), limite de tentativas e troca de senha/e-mail exigindo a senha atual. Ver [docs/autenticacao-passo-a-passo.md](docs/autenticacao-passo-a-passo.md) e [docs/seguranca-acesso-passo-a-passo.md](docs/seguranca-acesso-passo-a-passo.md).
+- **Senhas**: guardadas com hash (scrypt); ver [docs/senhas-passo-a-passo.md](docs/senhas-passo-a-passo.md).
 - **Login com Google e "Esqueci a senha"** não estão disponíveis: exigiam o Firebase, que estava com chaves de exemplo e gravava o `uid` do Firebase como `usuarioId` (texto), enquanto toda a API usa o `id_usuario` numérico do MySQL. A versão com Firebase está guardada em `docs/login-firebase.html`.
 - **Telas ainda sem integração com a API** (usam apenas `localStorage`, então os dados não são compartilhados entre dispositivos e se perdem ao limpar o cache): `receitas.html`, `metas.html`, `caixa.html`, `cofrinho.html`, `orcamento.html`, `recorrencia.html`, `desperdicio.html` e `score.html`. O backend dessas funcionalidades (exceto receitas e metas) já existe — falta ligar as telas a ele.
 - **`ia.html`**: a rota `POST /ia` (Gemini) existe no backend e responde, mas a tela ainda é estática e não chama a rota. Requer `GEMINI_API_KEY` no `.env`; sem ela o restante do sistema funciona normalmente e a rota devolve uma mensagem de "IA não configurada".
@@ -119,8 +119,13 @@ O backend também expõe rotas de atualização, boletos, orçamento, recorrênc
    ```bash
    python run.py
    ```
-   > Se o banco `poupe` já existia de uma versão antiga do projeto, as tabelas novas (`orcamento_categoria`, `recorrencia_gasto`) não serão criadas sozinhas. Para recriar tudo do zero (**apaga os dados**): `python setup_db.py --reset`
+   > O instalador só cria o banco se ele não existir ou estiver vazio; nunca apaga nada sozinho. Se o banco de `MYSQL_DATABASE` estiver incompleto (ex.: versão antiga sem `orcamento_categoria`/`recorrencia_gasto`) ou tiver tabelas de outro sistema, o servidor não sobe e explica o motivo. Para recriar tudo do zero (**apaga os dados**, faça backup antes): `python setup_db.py --reset --confirmar poupe`. Detalhes em [docs/banco-passo-a-passo.md](docs/banco-passo-a-passo.md).
+   > Ao atualizar o código com um banco já instalado (o servidor avisa "versão anterior do Poupe+"), rode uma vez `python setup_db.py --atualizar`: cria só as tabelas novas e recria as procedures, sem apagar dados. A versão com as correções REV-001 a REV-003 (limite de tentativas, sessões revogáveis, scripts locais) cria `sessao_usuario` e `tentativa_acesso` e exige esse comando; veja [docs/seguranca-acesso-passo-a-passo.md](docs/seguranca-acesso-passo-a-passo.md).
 5. Acesse `http://127.0.0.1:5000` no navegador — o backend também serve as telas de `frontend/`.
+
+O modo debug fica desativado por padrão (`POUPE_DEBUG=false`). Veja o
+[guia de erros e debug](docs/erros-debug-passo-a-passo.md) para entender as
+mensagens de erro, os códigos de referência e a configuração de desenvolvimento.
 
 ## 👨‍💻 Equipe
 

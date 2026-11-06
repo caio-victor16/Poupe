@@ -1,6 +1,9 @@
-from flask import Blueprint, jsonify, request
+import os
+import sqlite3
+from flask import Blueprint, jsonify, request, session, current_app
+from backend.services.ia_limite import reservar_chamada
 
-from backend.services.ia_service import GeminiService
+from backend.services.ia_service import ErroIA, GeminiService
 
 
 class IaController:
@@ -22,16 +25,36 @@ class IaController:
             return jsonify({"erro": "O campo 'mensagem' é obrigatório."}), 400
 
         mensagem = mensagem.strip()
+        if not mensagem:
+            return jsonify({"erro": "Escreva uma mensagem."}), 400
         if len(mensagem) > 2000:
             return jsonify({"erro": "A mensagem deve possuir no máximo 2000 caracteres."}), 400
+
+        config = current_app.config
+        limites = [
+            ("minuto", 60, config["IA_LIMITE_MINUTO"], False),
+            ("dia", 86400, config["IA_LIMITE_DIA"], False),
+            ("minuto", 60, config["IA_LIMITE_GLOBAL_MINUTO"], True),
+            ("dia", 86400, config["IA_LIMITE_GLOBAL_DIA"], True),
+        ]
+        try:
+            espera = reservar_chamada(
+                config.get("IA_LIMITES_DB") or os.path.join(current_app.instance_path, "ia_limites.sqlite3"),
+                session["usuario_id"], limites)
+        except (sqlite3.Error, OSError):
+            current_app.logger.warning("IA: contador de chamadas indisponível")
+            return jsonify({"erro": "IA temporariamente indisponível."}), 503
+        if espera:
+            return jsonify({"erro": "Limite de mensagens atingido. Tente novamente mais tarde.",
+                            "tentar_em_segundos": espera}), 429, {"Retry-After": str(espera)}
 
         try:
             resposta = self.service.gerar_resposta(mensagem)
             return jsonify({"resposta": resposta}), 200
-        except RuntimeError as erro:
+        except ErroIA as erro:
             return jsonify({"erro": str(erro)}), 502
-        except Exception as erro:
-            print("Erro inesperado:", erro)
+        except Exception:
+            current_app.logger.warning("IA: falha inesperada ao processar chamada")
             return jsonify({"erro": "Erro interno ao processar a mensagem."}), 500
 
 

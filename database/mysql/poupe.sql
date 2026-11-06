@@ -2,10 +2,14 @@
 -- Banco de dados: poupe
 -- Referenciado em backend/config.py (MYSQL_DATABASE = "poupe")
 -- Schema batendo com os models em backend/models/*.py
+--
+-- Este script NÃO apaga bancos. O setup_db.py ignora as duas linhas
+-- abaixo e usa o nome definido em MYSQL_DATABASE. Para recriar do zero:
+--   python setup_db.py --reset --confirmar <nome_do_banco>
+-- Execução manual (Workbench): ajuste o nome abaixo se usar outro banco.
 -- =============================================================
 
-drop database if exists poupe;
-create database poupe;
+create database if not exists poupe;
 use poupe;
 
 -- ---------------------------------------------------------------
@@ -19,6 +23,36 @@ create table usuario (
     senha varchar(255) not null,
     renda_mensal decimal(10,2) not null,
     limite_gastos decimal(10,2) not null
+);
+
+-- ---------------------------------------------------------------
+-- sessao_usuario -> backend/models/seguranca.py (REV-002)
+-- Uma linha por login. O cookie guarda o token; aqui fica só o hash.
+-- Logout e troca de senha apagam a linha, invalidando o cookie.
+-- ---------------------------------------------------------------
+create table sessao_usuario (
+    token_hash char(64) primary key,
+    id_usuario int not null,
+    expira_em datetime not null,
+
+    index idx_sessao_usuario (id_usuario),
+
+    foreign key (id_usuario)
+        references usuario(id_usuario)
+        on delete cascade
+);
+
+-- ---------------------------------------------------------------
+-- tentativa_acesso -> backend/models/seguranca.py (REV-001)
+-- Falhas de login e cadastros recentes, para limitar força bruta.
+-- ---------------------------------------------------------------
+create table tentativa_acesso (
+    id_tentativa int auto_increment primary key,
+    chave varchar(190) not null,
+    momento datetime not null,
+
+    index idx_tentativa_chave_momento (chave, momento),
+    index idx_tentativa_momento (momento)
 );
 
 -- ---------------------------------------------------------------
@@ -147,6 +181,100 @@ create table orcamento_categoria (
 );
 
 -- ---------------------------------------------------------------
+-- receita -> receitas do usuário (receitas.html)
+-- ---------------------------------------------------------------
+create table receita (
+    id_receita int auto_increment primary key,
+
+    id_usuario int not null,
+
+    descricao varchar(255) not null,
+    categoria varchar(60) not null,
+    valor decimal(10,2) not null,
+    data date not null,
+
+    index idx_receita_usuario_data (id_usuario, data),
+
+    foreign key (id_usuario)
+        references usuario(id_usuario)
+        on delete cascade
+);
+
+-- ---------------------------------------------------------------
+-- receita_recorrente -> receitas fixas mensais (recorrencia.html)
+-- ---------------------------------------------------------------
+create table receita_recorrente (
+    id_receita_recorrente int auto_increment primary key,
+
+    id_usuario int not null,
+
+    descricao varchar(255) not null,
+    categoria varchar(60) not null,
+    valor decimal(10,2) not null,
+    dia_mes int not null,
+    proxima_data date not null,
+    ativa boolean not null default true,
+
+    index idx_receita_recorrente_usuario_data (id_usuario, proxima_data),
+
+    foreign key (id_usuario)
+        references usuario(id_usuario)
+        on delete cascade
+);
+
+-- ---------------------------------------------------------------
+-- conta -> contas e saldos do caixa (caixa.html)
+-- ---------------------------------------------------------------
+create table conta (
+    id_conta int auto_increment primary key,
+
+    id_usuario int not null,
+
+    nome varchar(100) not null,
+    tipo varchar(30) not null,
+    saldo decimal(10,2) not null,
+
+    foreign key (id_usuario)
+        references usuario(id_usuario)
+        on delete cascade
+);
+
+-- ---------------------------------------------------------------
+-- meta -> metas de economia (metas.html)
+-- ---------------------------------------------------------------
+create table meta (
+    id_meta int auto_increment primary key,
+
+    id_usuario int not null,
+
+    titulo varchar(100) not null,
+    valor_alvo decimal(10,2) not null,
+    valor_guardado decimal(10,2) not null default 0,
+
+    foreign key (id_usuario)
+        references usuario(id_usuario)
+        on delete cascade
+);
+
+-- ---------------------------------------------------------------
+-- cofrinho -> cofrinhos com prazo e aportes (cofrinho.html)
+-- ---------------------------------------------------------------
+create table cofrinho (
+    id_cofrinho int auto_increment primary key,
+
+    id_usuario int not null,
+
+    titulo varchar(100) not null,
+    valor_alvo decimal(10,2) not null,
+    valor_guardado decimal(10,2) not null default 0,
+    prazo_meses int not null,
+
+    foreign key (id_usuario)
+        references usuario(id_usuario)
+        on delete cascade
+);
+
+-- ---------------------------------------------------------------
 -- recorrencia_gasto -> gastos fixos/recorrentes (recorrencia.html)
 -- ---------------------------------------------------------------
 create table recorrencia_gasto (
@@ -245,7 +373,8 @@ begin
 
 end $$
 
--- usada em: alerta_repository / alerta_service (checagem de limite)
+-- usada em: gasto_repository (checagem de limite)
+-- Considera só os gastos do mês atual (mesmo critério do score).
 create procedure sp_verificar_limite_gastos(
     in p_id_usuario int
 )
@@ -261,7 +390,7 @@ begin
         round(
             (
                 coalesce(sum(g.valor), 0)
-                / u.limite_gastos
+                / nullif(u.limite_gastos, 0)
             ) * 100,
             2
         ) as percentual_utilizado,
@@ -278,6 +407,8 @@ begin
 
     left join gasto g
         on g.id_usuario = u.id_usuario
+       and g.data >= date_format(curdate(), '%Y-%m-01')
+       and g.data <  date_add(date_format(curdate(), '%Y-%m-01'), interval 1 month)
 
     where u.id_usuario = p_id_usuario
 
@@ -316,6 +447,9 @@ begin
 end $$
 
 -- usada em: alerta_service (gera alerta automático de limite)
+-- Considera só os gastos do mês atual. Cria no máximo UM alerta de cada
+-- situação ("próximo" e "ultrapassado") por usuário e por mês (item 14):
+-- chamadas repetidas, a cada gasto cadastrado, não duplicam o alerta.
 create procedure sp_gerar_alerta_limite(
     in p_id_usuario int
 )
@@ -324,6 +458,9 @@ begin
     declare v_limite decimal(10,2);
     declare v_total decimal(10,2);
     declare v_percentual decimal(10,2);
+    declare v_mensagem varchar(255) default null;
+    declare v_inicio_mes date default date_format(curdate(), '%Y-%m-01');
+    declare v_trava varchar(64) default concat('poupe_alerta_limite_', p_id_usuario);
 
     select limite_gastos
     into v_limite
@@ -333,25 +470,42 @@ begin
     select coalesce(sum(valor), 0)
     into v_total
     from gasto
-    where id_usuario = p_id_usuario;
+    where id_usuario = p_id_usuario
+      and data >= v_inicio_mes
+      and data <  date_add(v_inicio_mes, interval 1 month);
 
     if v_limite > 0 then
 
         set v_percentual = (v_total / v_limite) * 100;
 
         if v_percentual >= 100 then
-
-            insert into alerta
-                (id_usuario, tipo, mensagem, data, visualizado)
-            values
-                (p_id_usuario, 'limite', 'seu limite de gastos foi ultrapassado.', now(), false);
-
+            set v_mensagem = 'seu limite de gastos foi ultrapassado.';
         elseif v_percentual >= 80 then
+            set v_mensagem = 'você está próximo do seu limite de gastos.';
+        end if;
+
+    end if;
+
+    if v_mensagem is not null then
+
+        -- Trava por usuário: duas chamadas ao mesmo tempo não criam dois alertas.
+        if get_lock(v_trava, 5) = 1 then
 
             insert into alerta
                 (id_usuario, tipo, mensagem, data, visualizado)
-            values
-                (p_id_usuario, 'limite', 'você está próximo do seu limite de gastos.', now(), false);
+            select p_id_usuario, 'limite', v_mensagem, now(), false
+            from dual
+            where not exists (
+                select 1
+                from alerta
+                where id_usuario = p_id_usuario
+                  and tipo = 'limite'
+                  and mensagem = v_mensagem
+                  and data >= v_inicio_mes
+                  and data <  date_add(v_inicio_mes, interval 1 month)
+            );
+
+            do release_lock(v_trava);
 
         end if;
 

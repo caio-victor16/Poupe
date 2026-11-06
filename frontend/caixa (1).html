@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Poupe+ | Caixa e Contas</title>
 <link rel="stylesheet" href="gastos.css">
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="vendor/lucide-1.69.0.min.js"></script>
 </head>
 <body>
 
@@ -98,10 +98,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const saldoTotalGeral = document.getElementById("saldoTotalGeral");
 
   function pegarContas() {
-    return JSON.parse(localStorage.getItem("poupe_contas") || "[]");
+    return JSON.parse(localStorage.getItem(chaveUsuario("poupe_contas")) || "[]");
   }
   function salvarContas(c) {
-    localStorage.setItem("poupe_contas", JSON.stringify(c));
+    localStorage.setItem(chaveUsuario("poupe_contas"), JSON.stringify(c));
   }
 
   btnShowAddForm.addEventListener("click", () => {
@@ -130,10 +130,10 @@ document.addEventListener("DOMContentLoaded", () => {
     contas.forEach(c => {
       total += Number(c.saldo);
       html += `<tr>
-        <td class="font-medium">${c.nome}</td>
-        <td><span class="cat-badge"><i data-lucide="credit-card"></i>${c.tipo}</span></td>
+        <td class="font-medium">${textoHTML(c.nome)}</td>
+        <td><span class="cat-badge"><i data-lucide="credit-card"></i>${textoHTML(c.tipo)}</span></td>
         <td class="text-right font-bold">${Number(c.saldo).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</td>
-        <td class="text-right"><button class="delete-btn" data-id="${c.id}" type="button"><i data-lucide="trash-2"></i></button></td>
+        <td class="text-right"><button class="delete-btn" data-id="${textoHTML(c.id)}" type="button"><i data-lucide="trash-2"></i></button></td>
       </tr>`;
     });
 

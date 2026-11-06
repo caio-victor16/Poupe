@@ -7,7 +7,7 @@
 
   <link rel="stylesheet" href="receitas.css">
 
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="vendor/lucide-1.69.0.min.js"></script>
   <script src="api.js" defer></script>
 </head>
 
@@ -320,576 +320,221 @@
 
 
 <script>
+// Receitas ficam no servidor (tabela receita). A cópia local
+// poupePlus_incomes_u<ID> é atualizada por DadosLocais e lida por score e relatórios.
 
-document.addEventListener('DOMContentLoaded', () => {
+// Data de hoje no fuso do navegador (toISOString usaria UTC: após 21h no Brasil já é amanhã).
+function hojeISO(agora = new Date()) {
+  const dois = (n) => String(n).padStart(2, '0');
+  return `${agora.getFullYear()}-${dois(agora.getMonth() + 1)}-${dois(agora.getDate())}`;
+}
 
+function salvarReceitasLocais(lista) {
+  localStorage.setItem(chaveUsuario('poupePlus_incomes'), JSON.stringify(lista));
+}
 
-  /* =========================
-     LUCIDE
-  ========================= */
+// Receitas antigas do navegador vão para o servidor; cada uma só sai daqui
+// depois que o servidor confirmar. Inválidas ou recusadas ficam locais.
+async function migrarReceitasLocais() {
+  const antigas = itensLocais('poupePlus_incomes');
+  const migradas = new Set();
+  for (const [indice, r] of antigas.entries()) {
+    const valor = Number(r.amount);
+    if (!r.description || !r.category || !r.date || !(valor > 0)) continue;
+    try {
+      await ReceitaAPI.criar({ descricao: r.description, categoria: r.category, valor, data: r.date });
+      migradas.add(indice);
+    } catch (erro) {
+      console.error('Não foi possível migrar a receita local:', erro);
+    }
+  }
+  if (migradas.size) {
+    salvarReceitasLocais(antigas.filter((_, indice) => !migradas.has(indice)));
+  }
+  return migradas.size;
+}
 
+document.addEventListener('DOMContentLoaded', async () => {
   lucide.createIcons();
+  const usuarioId = Sessao.exigirLogin();
+  if (!usuarioId) return;
 
+  const modal = document.getElementById('modal');
+  const btnOpenModal = document.getElementById('btnOpenModal');
+  const btnCancelModal = document.getElementById('btnCancelModal');
+  const incomeForm = document.getElementById('incomeForm');
+  const tableBody = document.getElementById('incomesTableBody');
+  const totalDisplay = document.getElementById('totalDisplay');
+  const footerTotalDisplay = document.getElementById('footerTotalDisplay');
+  const incomeDateInput = document.getElementById('incomeDate');
+  const prevMonth = document.getElementById('prevMonth');
+  const nextMonth = document.getElementById('nextMonth');
+  const monthPicker = document.getElementById('monthPicker');
+  const botaoSalvar = incomeForm.querySelector('button[type="submit"]');
 
-  /* =========================
-     ELEMENTOS
-  ========================= */
+  // Abre no mês atual (antes estava fixo em agosto de 2026).
+  const hoje = new Date();
+  let selectedDate = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
-  const modal =
-    document.getElementById('modal');
+  incomeDateInput.value = hojeISO();
 
-  const btnOpenModal =
-    document.getElementById('btnOpenModal');
-
-  const btnCancelModal =
-    document.getElementById('btnCancelModal');
-
-  const incomeForm =
-    document.getElementById('incomeForm');
-
-  const tableBody =
-    document.getElementById('incomesTableBody');
-
-  const totalDisplay =
-    document.getElementById('totalDisplay');
-
-  const footerTotalDisplay =
-    document.getElementById('footerTotalDisplay');
-
-  const incomeDateInput =
-    document.getElementById('incomeDate');
-
-  const prevMonth =
-    document.getElementById('prevMonth');
-
-  const nextMonth =
-    document.getElementById('nextMonth');
-
-  const monthPicker =
-    document.getElementById('monthPicker');
-
-
-  /* =========================
-     MÊS SELECIONADO
-  ========================= */
-
-  let selectedDate =
-    new Date(2026, 7, 1);
-
-  /*
-    Janeiro = 0
-    Fevereiro = 1
-    Março = 2
-    Abril = 3
-    Maio = 4
-    Junho = 5
-    Julho = 6
-    Agosto = 7
-  */
-
-  /* =========================
-     CARREGAR LOCAL STORAGE
-  ========================= */
-
-  let incomes =
-    JSON.parse(
-      localStorage.getItem(chaveUsuario('poupePlus_incomes'))
-    ) || [];
-
-
-  /* =========================
-     DATA PADRÃO DO FORMULÁRIO
-  ========================= */
-
-  incomeDateInput.value =
-    new Date()
-      .toISOString()
-      .split('T')[0];
-
-
-  /* =========================
-     FORMATAR DINHEIRO
-  ========================= */
+  function pegarReceitas() {
+    try {
+      const lista = JSON.parse(localStorage.getItem(chaveUsuario('poupePlus_incomes')) || '[]');
+      return Array.isArray(lista) ? lista : [];
+    } catch (e) {
+      return [];
+    }
+  }
 
   function formatMoney(value) {
-
-    return Number(value).toLocaleString(
-      'pt-BR',
-      {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }
-    );
-
+    return Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-
-
-  /* =========================
-     FORMATAR DATA
-  ========================= */
 
   function formatDate(dateStr) {
-
-    if (!dateStr) {
-      return '';
-    }
-
-    const parts =
-      dateStr.split('-');
-
-    if (parts.length === 3) {
-
-      return `
-        ${parts[2]}/${parts[1]}/${parts[0]}
-      `;
-
-    }
-
-    return dateStr;
-
+    const parts = String(dateStr || '').split('-');
+    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : String(dateStr || '');
   }
-
-
-  /* =========================
-     ATUALIZAR CALENDÁRIO
-  ========================= */
 
   function updateMonthPicker() {
-
-    const year =
-      selectedDate.getFullYear();
-
-    const month =
-      String(
-        selectedDate.getMonth() + 1
-      ).padStart(2, '0');
-
-
-    monthPicker.value =
-      `${year}-${month}`;
-
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    monthPicker.value = `${selectedDate.getFullYear()}-${month}`;
   }
 
-
-  /* =========================
-     RENDERIZAR RECEITAS
-  ========================= */
+  async function atualizar() {
+    await DadosLocais.sincronizarReceitas(usuarioId);
+    renderIncomes();
+  }
 
   function renderIncomes() {
-
     tableBody.innerHTML = '';
-
     let total = 0;
+    const mesSelecionado = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}`;
 
+    // Identificador estável para o botão de excluir: servidor pelo id, local pela posição.
+    let indiceLocal = 0;
+    const doMes = pegarReceitas()
+      .map(item => ({ item, chave: item.origem === 'servidor' ? item.id : `local-${indiceLocal++}` }))
+      .filter(({ item }) => String(item.date || '').startsWith(mesSelecionado));
 
-    const selectedMonth =
-      selectedDate.getMonth();
-
-    const selectedYear =
-      selectedDate.getFullYear();
-
-
-    /*
-      Filtra as receitas
-      pelo mês e ano escolhidos
-    */
-
-    const filteredIncomes =
-      incomes.filter(item => {
-
-        if (!item.date) {
-          return false;
-        }
-
-
-        const date =
-          new Date(
-            item.date + 'T00:00:00'
-          );
-
-
-        return (
-          date.getMonth() === selectedMonth &&
-          date.getFullYear() === selectedYear
-        );
-
-      });
-
-
-    /* =========================
-       SEM RECEITAS
-    ========================= */
-
-    if (filteredIncomes.length === 0) {
-
+    if (doMes.length === 0) {
       tableBody.innerHTML = `
-
         <tr>
-
-          <td
-            colspan="5"
-            class="empty-msg"
-          >
-            Nenhuma receita cadastrada
-            neste mês.
-          </td>
-
-        </tr>
-
-      `;
-
-    }
-
-
-    /* =========================
-       COM RECEITAS
-    ========================= */
-
-    else {
-
-      filteredIncomes.forEach(item => {
-
+          <td colspan="5" class="empty-msg">Nenhuma receita cadastrada neste mês.</td>
+        </tr>`;
+    } else {
+      doMes.forEach(({ item, chave }) => {
         total += Number(item.amount);
-
-
-        const originalIndex =
-          incomes.indexOf(item);
-
-
-        const tr =
-          document.createElement('tr');
-
-
+        const local = item.origem === 'servidor' ? '' : ' (neste navegador)';
+        const tr = document.createElement('tr');
         tr.innerHTML = `
-
-          <td class="font-medium">
-            ${item.description}
-          </td>
-
-          <td class="text-muted">
-            ${formatDate(item.date)}
-          </td>
-
-          <td class="text-muted">
-            ${item.category}
-          </td>
-
-          <td class="text-right font-bold">
-            R$ ${formatMoney(item.amount)}
-          </td>
-
+          <td class="font-medium">${textoHTML(item.description)}${textoHTML(local)}</td>
+          <td class="text-muted">${textoHTML(formatDate(item.date))}</td>
+          <td class="text-muted">${textoHTML(item.category)}</td>
+          <td class="text-right font-bold">R$ ${formatMoney(item.amount)}</td>
           <td class="action-cell">
-
-            <button
-              class="delete-btn"
-              data-index="${originalIndex}"
-              title="Excluir"
-            >
-
+            <button class="delete-btn" data-id="${textoHTML(chave)}" title="Excluir">
               <i data-lucide="trash-2"></i>
-
             </button>
-
-          </td>
-
-        `;
-
-
+          </td>`;
         tableBody.appendChild(tr);
-
       });
-
     }
 
-
-    /* =========================
-       ATUALIZAR TOTAL
-    ========================= */
-
-    const formattedTotal =
-      `R$ ${formatMoney(total)}`;
-
-
-    totalDisplay.innerText =
-      formattedTotal;
-
-
-    footerTotalDisplay.innerText =
-      formattedTotal;
-
-
-    /* =========================
-       ÍCONES
-    ========================= */
-
+    const formattedTotal = `R$ ${formatMoney(total)}`;
+    totalDisplay.innerText = formattedTotal;
+    footerTotalDisplay.innerText = formattedTotal;
     lucide.createIcons();
 
-
-    /* =========================
-       BOTÕES DE EXCLUIR
-    ========================= */
-
-    document
-      .querySelectorAll('.delete-btn')
-      .forEach(button => {
-
-        button.addEventListener(
-          'click',
-          event => {
-
-            const index =
-              event.currentTarget
-                .getAttribute('data-index');
-
-
-            deleteIncome(index);
-
-          }
-        );
-
-      });
-
+    document.querySelectorAll('.delete-btn').forEach(button => {
+      button.addEventListener('click', event => deleteIncome(event.currentTarget.getAttribute('data-id')));
+    });
   }
 
+  prevMonth.addEventListener('click', () => {
+    selectedDate.setMonth(selectedDate.getMonth() - 1);
+    updateMonthPicker();
+    renderIncomes();
+  });
 
-  /* =========================
-     SETA PARA MÊS ANTERIOR
-  ========================= */
+  nextMonth.addEventListener('click', () => {
+    selectedDate.setMonth(selectedDate.getMonth() + 1);
+    updateMonthPicker();
+    renderIncomes();
+  });
 
-  prevMonth.addEventListener(
-    'click',
-    () => {
+  monthPicker.addEventListener('change', () => {
+    if (!monthPicker.value) return;
+    const [year, month] = monthPicker.value.split('-');
+    selectedDate = new Date(Number(year), Number(month) - 1, 1);
+    renderIncomes();
+  });
 
-      selectedDate.setMonth(
-        selectedDate.getMonth() - 1
-      );
-
-
-      updateMonthPicker();
-
-      renderIncomes();
-
-    }
-  );
-
-
-  /* =========================
-     SETA PARA PRÓXIMO MÊS
-  ========================= */
-
-  nextMonth.addEventListener(
-    'click',
-    () => {
-
-      selectedDate.setMonth(
-        selectedDate.getMonth() + 1
-      );
-
-
-      updateMonthPicker();
-
-      renderIncomes();
-
-    }
-  );
-
-
-  /* =========================
-     CALENDÁRIO
-  ========================= */
-
-  monthPicker.addEventListener(
-    'change',
-    () => {
-
-      if (!monthPicker.value) {
-        return;
-      }
-
-
-      const [year, month] =
-        monthPicker.value.split('-');
-
-
-      selectedDate =
-        new Date(
-          Number(year),
-          Number(month) - 1,
-          1
-        );
-
-
-      renderIncomes();
-
-    }
-  );
-
-
-  /* =========================
-     ABRIR MODAL
-  ========================= */
-
-  btnOpenModal.addEventListener(
-    'click',
-    () => {
-
-      modal.classList.add('active');
-
-    }
-  );
-
-
-  /* =========================
-     FECHAR MODAL
-  ========================= */
+  btnOpenModal.addEventListener('click', () => modal.classList.add('active'));
 
   function closeModal() {
-
     modal.classList.remove('active');
-
     incomeForm.reset();
-
-
-    incomeDateInput.value =
-      new Date()
-        .toISOString()
-        .split('T')[0];
-
+    incomeDateInput.value = hojeISO();
   }
+  btnCancelModal.addEventListener('click', closeModal);
 
+  incomeForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    const descricao = document.getElementById('incomeDesc').value.trim();
+    const categoria = document.getElementById('incomeCategory').value;
+    const valor = parseFloat(document.getElementById('incomeValue').value);
+    const data = document.getElementById('incomeDate').value;
 
-  btnCancelModal.addEventListener(
-    'click',
-    closeModal
-  );
-
-
-  /* =========================
-     SALVAR RECEITA
-  ========================= */
-
-  incomeForm.addEventListener(
-    'submit',
-    event => {
-
-      event.preventDefault();
-
-
-      const description =
-        document
-          .getElementById('incomeDesc')
-          .value.trim();
-
-
-      const category =
-        document
-          .getElementById('incomeCategory')
-          .value;
-
-
-      const amount =
-        parseFloat(
-          document
-            .getElementById('incomeValue')
-            .value
-        );
-
-
-      const date =
-        document
-          .getElementById('incomeDate')
-          .value;
-
-
-      incomes.push({
-
-        description: description,
-
-        category: category,
-
-        amount: amount,
-
-        date: date
-
-      });
-
-
-      /* Salvar */
-
-     localStorage.setItem(
-  chaveUsuario('poupePlus_incomes'),
-  JSON.stringify(incomes)
-);
-
-
-      closeModal();
-
-
-      /*
-        Depois de salvar,
-        vai automaticamente
-        para o mês da receita
-      */
-
-      const [year, month] =
-        date.split('-');
-
-
-      selectedDate =
-        new Date(
-          Number(year),
-          Number(month) - 1,
-          1
-        );
-
-
-      updateMonthPicker();
-
-      renderIncomes();
-
-    }
-  );
-
-
-  /* =========================
-     EXCLUIR RECEITA
-  ========================= */
-
-  function deleteIncome(index) {
-
-    if (
-      confirm(
-        'Deseja remover esta receita?'
-      )
-    ) {
-
-      incomes.splice(
-        Number(index),
-        1
-      );
-
-
-      localStorage.setItem(
-        'poupePlus_incomes',
-        JSON.stringify(incomes)
-      );
-
-
-      renderIncomes();
-
+    if (!descricao || !categoria || !data || !(valor > 0)) {
+      alert('Preencha descrição, categoria, data e um valor maior que zero.');
+      return;
     }
 
+    botaoSalvar.disabled = true;
+    try {
+      await ReceitaAPI.criar({ descricao, categoria, valor, data });
+    } catch (erro) {
+      alert(`Não foi possível salvar: ${erro.message}`);
+      return;
+    } finally {
+      botaoSalvar.disabled = false;
+    }
+
+    closeModal();
+    // Depois de salvar, vai para o mês da receita.
+    const [year, month] = data.split('-');
+    selectedDate = new Date(Number(year), Number(month) - 1, 1);
+    updateMonthPicker();
+    await atualizar();
+  });
+
+  async function deleteIncome(chave) {
+    if (!confirm('Deseja remover esta receita?')) return;
+    if (String(chave).startsWith('local-')) {
+      const indice = Number(String(chave).slice('local-'.length));
+      salvarReceitasLocais(itensLocais('poupePlus_incomes').filter((_, i) => i !== indice));
+      await atualizar();
+      return;
+    }
+    const item = pegarReceitas().find(r => r.id === chave);
+    if (!item) return;
+    try {
+      await ReceitaAPI.excluir(item.id_receita);
+    } catch (erro) {
+      alert(`Não foi possível excluir: ${erro.message}`);
+      return;
+    }
+    await atualizar();
   }
-
-
-  /* =========================
-     INICIAR
-  ========================= */
 
   updateMonthPicker();
-
-  renderIncomes();
-
+  renderIncomes();                    // mostra a cópia local enquanto busca o servidor
+  const migradas = await migrarReceitasLocais();
+  await atualizar();
+  if (migradas > 0) {
+    alert(`${migradas} receita(s) salvas só neste navegador foram enviadas ao servidor.`);
+  }
 });
 
 </script>

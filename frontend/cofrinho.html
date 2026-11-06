@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Poupe+ | Cofrinho e Metas</title>
 <link rel="stylesheet" href="gastos.css">
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="vendor/lucide-1.69.0.min.js"></script>
 </head>
 <body>
   <aside>
@@ -86,8 +86,18 @@
 
 <script src="api.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   lucide.createIcons();
+  // Atualiza as cópias locais com o servidor (item 10). Cofrinhos antigos que só
+  // existiam neste navegador são enviados ao servidor (item 10c).
+  await DadosLocais.sincronizar();
+  const cofrinhosMigrados = await migrarItensLocais("poupe_cofrinhos", m => {
+    const alvo = Number(m.alvo), guardado = Number(m.guardado) || 0, prazo = Number(m.prazoMeses);
+    return m.titulo && alvo > 0 && guardado >= 0 && Number.isInteger(prazo) && prazo >= 1 && prazo <= 600
+      ? { titulo: m.titulo, valor_alvo: alvo, valor_guardado: guardado, prazo_meses: prazo }
+      : null;
+  }, CofrinhoAPI.criar);
+  await DadosLocais.sincronizarCofrinhos();
   const listView = document.getElementById("listView");
   const formView = document.getElementById("formView");
   const btnShowAddForm = document.getElementById("btnShowAddForm");
@@ -151,20 +161,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       html += `<div class="table-card" style="padding: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <strong>${m.titulo}</strong>
-          <button class="delete-btn" data-id="${m.id}" type="button"><i data-lucide="trash-2"></i></button>
+          <strong>${textoHTML(m.titulo)}</strong>
+          <button class="delete-btn" data-id="${textoHTML(m.id)}" type="button"><i data-lucide="trash-2"></i></button>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px;" class="text-muted">
           <span>Guardado: <b>R$ ${Number(m.guardado).toFixed(2)}</b></span>
           <span>Alvo: <b>R$ ${Number(m.alvo).toFixed(2)}</b> (${progresso}%)</span>
         </div>
         <div style="font-size: 12px; margin-bottom: 12px; color: var(--primary);">
-          💡 Faltam <b>R$ ${restante.toFixed(2)}</b>. Guarde <b>R$ ${guardarPorMes}/mês</b> durante ${meses} meses.
+          💡 Faltam <b>R$ ${restante.toFixed(2)}</b>. Guarde <b>R$ ${guardarPorMes}/mês</b> durante ${textoHTML(meses)} meses.
         </div>
         <div style="background: var(--border-color); border-radius: 8px; height: 10px; overflow: hidden; margin-bottom: 16px;">
           <div style="background: var(--primary); width: ${progresso}%; height: 100%;"></div>
         </div>
-        <button class="btn-filter add-valor-btn" data-id="${m.id}" style="width: 100%;"><i data-lucide="plus-circle"></i>Aportar Dinheiro</button>
+        <button class="btn-filter add-valor-btn" data-id="${textoHTML(m.id)}" style="width: 100%;"><i data-lucide="plus-circle"></i>Aportar Dinheiro</button>
       </div>`;
     });
     html += `</div>`;
@@ -172,43 +182,72 @@ document.addEventListener("DOMContentLoaded", () => {
     lucide.createIcons();
 
     document.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        salvarMetas(pegarMetas().filter(x => String(x.id) !== String(btn.dataset.id)));
+      btn.addEventListener("click", async () => {
+        const item = pegarMetas().find(x => String(x.id) === String(btn.dataset.id));
+        if (!item || !confirm(`Excluir o cofrinho "${item.titulo}"?`)) return;
+        if (item.origem === "servidor") {
+          try {
+            await CofrinhoAPI.excluir(item.id_cofrinho);
+          } catch (erro) {
+            alert(`Não foi possível excluir: ${erro.message}`);
+            return;
+          }
+          await DadosLocais.sincronizarCofrinhos();
+        } else {
+          salvarMetas(pegarMetas().filter(x => String(x.id) !== String(item.id)));
+        }
         renderizar();
       });
     });
 
     document.querySelectorAll(".add-valor-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const id = btn.dataset.id;
+      btn.addEventListener("click", async () => {
+        const item = pegarMetas().find(x => String(x.id) === String(btn.dataset.id));
+        if (!item) return;
         const valorAdicionar = prompt("Quanto deseja aportar nesta meta?");
-        if (valorAdicionar) {
-          const num = Number(valorAdicionar.replace(",", "."));
-          if (!isNaN(num) && num > 0) {
-            let metas = pegarMetas();
-            metas = metas.map(m => String(m.id) === String(id) ? {...m, guardado: Number(m.guardado) + num} : m);
-            salvarMetas(metas);
-            renderizar();
-          } else {
-            alert("Valor inválido!");
+        if (!valorAdicionar) return;
+        const num = Number(valorAdicionar.replace(",", "."));
+        if (!(num > 0)) { alert("Valor inválido!"); return; }
+        if (item.origem === "servidor") {
+          try {
+            await CofrinhoAPI.aportar(item.id_cofrinho, num);
+          } catch (erro) {
+            alert(`Não foi possível aportar: ${erro.message}`);
+            return;
           }
+          await DadosLocais.sincronizarCofrinhos();
+        } else {
+          salvarMetas(pegarMetas().map(m => String(m.id) === String(item.id) ? { ...m, guardado: Number(m.guardado) + num } : m));
         }
+        renderizar();
       });
     });
   }
 
-  formCofrinho.addEventListener("submit", (e) => {
+  formCofrinho.addEventListener("submit", async (e) => {
     e.preventDefault();
     const titulo = document.getElementById("tituloMeta").value.trim();
     const alvo = Number(document.getElementById("metaValor").value.replace(",", "."));
     const prazoMeses = Number(document.getElementById("prazoMeses").value);
     const guardado = Number(document.getElementById("metaGuardado").value.replace(",", "."));
 
-    if (!titulo || isNaN(alvo) || isNaN(prazoMeses)) { alert("Preencha os campos corretamente!"); return; }
+    if (!titulo || !(alvo > 0) || !Number.isInteger(prazoMeses) || prazoMeses < 1 || prazoMeses > 600
+        || !(guardado >= 0)) {
+      alert("Preencha título, alvo maior que zero, prazo de 1 a 600 meses e valor guardado não negativo.");
+      return;
+    }
 
-    const metas = pegarMetas();
-    metas.push({ id: Date.now(), titulo, alvo, prazoMeses, guardado: isNaN(guardado) ? 0 : guardado });
-    salvarMetas(metas);
+    const botao = formCofrinho.querySelector('button[type="submit"]');
+    botao.disabled = true;
+    try {
+      await CofrinhoAPI.criar({ titulo, valor_alvo: alvo, valor_guardado: guardado, prazo_meses: prazoMeses });
+    } catch (erro) {
+      alert(`Não foi possível salvar: ${erro.message}`);
+      return;
+    } finally {
+      botao.disabled = false;
+    }
+    await DadosLocais.sincronizarCofrinhos();
     formCofrinho.reset();
     formView.classList.add("hidden");
     listView.classList.remove("hidden");
@@ -216,6 +255,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   renderizar();
+  if (cofrinhosMigrados > 0) {
+    alert(`${cofrinhosMigrados} cofrinho(s) salvos só neste navegador foram enviados ao servidor.`);
+  }
 });
 </script>
 </body>

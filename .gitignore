@@ -7,3 +7,5 @@ env/
 .vscode/
 .idea/
 
+/.test-deps/
+/instance/

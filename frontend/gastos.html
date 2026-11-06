@@ -17,7 +17,7 @@ rel="stylesheet"
 href="gastos.css"
 >
 
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="vendor/lucide-1.69.0.min.js"></script>
 
 <script src="api.js" defer></script>
 
@@ -589,19 +589,17 @@ async function carregarGastos() {
   try {
     const gastosDoServidor = await GastoAPI.listarPorUsuario(usuarioId);
 
-    gastosCache = gastosDoServidor.map((g) => ({
-      id: g.id_gasto,
-      descricao: g.descricao,
-      valor: g.valor,
-      data: g.data,
-      categoria: capitalizar(categoriaPorId[g.id_categoria] || "outros"),
-    }));
-    localStorage.setItem("poupe_gastos", JSON.stringify(gastosCache));
+    gastosCache = gastosDoServidor.map((g) => gastoParaCache(g, categoriaPorId));
+    // Mesma chave (por usuário) que orçamento, score, cofrinho e desperdício leem.
+    localStorage.setItem(chaveUsuario("poupe_gastos"), JSON.stringify(gastosCache));
   } catch (erro) {
     console.error("Erro ao carregar gastos:", erro);
     gastosCache = [];
     alert("Não foi possível carregar seus gastos do servidor.");
-    localStorage.setItem("poupe_gastos", "[]");
+    localStorage.setItem(chaveUsuario("poupe_gastos"), "[]");
+  } finally {
+    // Chave antiga sem usuário: podia expor gastos de outra conta no mesmo navegador.
+    localStorage.removeItem("poupe_gastos");
   }
 }
 
@@ -1237,7 +1235,7 @@ gasto.categoria
 )}"
 ></i>
 
-${gasto.categoria}
+${textoHTML(gasto.categoria)}
 
 </span>
 
@@ -1246,9 +1244,9 @@ ${gasto.categoria}
 
 <td class="text-muted">
 
-${formatarData(
+${textoHTML(formatarData(
 gasto.data
-)}
+))}
 
 </td>
 
@@ -1267,7 +1265,7 @@ valor
 <button
 class="delete-btn"
 type="button"
-data-id="${gasto.id}"
+data-id="${textoHTML(gasto.id)}"
 title="Excluir gasto"
 >
 
@@ -1687,6 +1685,13 @@ INICIAR PÁGINA
 ========================== */
 
 await carregarCategorias();
+
+// Gera os gastos das recorrências vencidas antes de listar (item 10).
+try {
+  await RecorrenciaAPI.processar(usuarioId);
+} catch (erro) {
+  console.error("Erro ao processar recorrências:", erro);
+}
 
 await carregarGastos();
 

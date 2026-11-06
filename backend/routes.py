@@ -22,6 +22,10 @@ from backend.controllers.score_controller import score_bp
 from backend.controllers.caixa_controller import caixa_bp
 from backend.controllers.desperdicio_controller import desperdicio_bp
 from backend.controllers.cofrinho_controller import cofrinho_bp
+from backend.controllers.receita_controller import receita_bp
+from backend.controllers.financas_controller import (
+    conta_bp, meta_bp, cofrinho_meta_bp, receita_recorrente_bp,
+)
 
 
 def register_routes(app):
@@ -40,3 +44,6 @@ def register_routes(app):
     app.register_blueprint(caixa_bp)
     app.register_blueprint(desperdicio_bp)
     app.register_blueprint(cofrinho_bp)
+    app.register_blueprint(receita_bp)
+    for bp in (conta_bp, meta_bp, cofrinho_meta_bp, receita_recorrente_bp):
+        app.register_blueprint(bp)

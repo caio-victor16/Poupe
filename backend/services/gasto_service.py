@@ -1,5 +1,24 @@
+from decimal import Decimal
+
+from backend.crud import (booleano, data_iso, dinheiro, id_existente, texto_opcional,
+                          validar_campos)
+from backend.extensions import db
+from backend.models.categoria import Categoria
 from backend.models.gasto import Gasto
 from backend.repositories.gasto_repository import GastoRepository
+
+# Item 12: todo valor gravado passa por validação (antes só se checava presença).
+CAMPOS_OBRIGATORIOS = {
+    "id_categoria": id_existente(Categoria, "categoria"),
+    "valor": dinheiro(Decimal("0"), incluir_minimo=False),
+    "data": data_iso,
+}
+CAMPOS_OPCIONAIS = {
+    "descricao": texto_opcional(255),
+    "recorrente": booleano,
+    "tipo_pagamento": texto_opcional(50),
+    "status_gasto": texto_opcional(30),
+}
 
 
 class GastoService:
@@ -17,20 +36,12 @@ class GastoService:
         return gasto.to_dict() if gasto else None
 
     def criar(self, dados):
-        for campo in ["id_usuario", "id_categoria", "valor", "data"]:
-            if dados.get(campo) is None:
-                raise ValueError(f"O campo '{campo}' é obrigatório.")
-
-        gasto = Gasto(
-            id_usuario=dados["id_usuario"],
-            id_categoria=dados["id_categoria"],
-            valor=dados["valor"],
-            data=dados["data"],
-            descricao=dados.get("descricao"),
-            recorrente=dados.get("recorrente", False),
-            tipo_pagamento=dados.get("tipo_pagamento"),
-            status_gasto=dados.get("status_gasto"),
-        )
+        limpos = validar_campos(CAMPOS_OBRIGATORIOS, dados)
+        limpos.update(validar_campos(CAMPOS_OPCIONAIS, dados, parcial=True))
+        limpos.setdefault("recorrente", False)
+        if dados.get("id_usuario") is None:
+            raise ValueError("O campo 'id_usuario' é obrigatório.")
+        gasto = Gasto(id_usuario=dados["id_usuario"], **limpos)
         gasto.salvar()
         return gasto.to_dict()
 
@@ -38,15 +49,11 @@ class GastoService:
         gasto = Gasto.buscar_por_id(id_gasto)
         if gasto is None:
             return None
-        gasto.atualizar(
-            id_categoria=dados.get("id_categoria"),
-            valor=dados.get("valor"),
-            data=dados.get("data"),
-            descricao=dados.get("descricao"),
-            recorrente=dados.get("recorrente"),
-            tipo_pagamento=dados.get("tipo_pagamento"),
-            status_gasto=dados.get("status_gasto"),
-        )
+        # Valida tudo antes de alterar qualquer campo (parcial: só o que veio).
+        limpos = validar_campos({**CAMPOS_OBRIGATORIOS, **CAMPOS_OPCIONAIS}, dados, parcial=True)
+        for campo, valor in limpos.items():
+            setattr(gasto, campo, valor)
+        db.session.commit()
         return gasto.to_dict()
 
     def excluir(self, id_gasto):
@@ -60,7 +67,11 @@ class GastoService:
         return self.repository.gastos_por_categoria(id_usuario)
 
     def gastos_por_periodo(self, id_usuario, data_inicio, data_fim):
-        return self.repository.gastos_por_periodo(id_usuario, data_inicio, data_fim)
+        inicio = data_iso(data_inicio, "inicio")
+        fim = data_iso(data_fim, "fim")
+        if inicio > fim:
+            raise ValueError("A data 'inicio' deve ser anterior ou igual a 'fim'.")
+        return self.repository.gastos_por_periodo(id_usuario, inicio, fim)
 
     def verificar_limite(self, id_usuario):
         return self.repository.verificar_limite(id_usuario)

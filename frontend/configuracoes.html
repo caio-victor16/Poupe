@@ -8,7 +8,7 @@
   <title>Poupe+ | Configurações</title>
 
   <link rel="stylesheet" href="configuracao.css">
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="vendor/lucide-1.69.0.min.js"></script>
 </head>
 
 <body>
@@ -193,6 +193,10 @@
           <label>Telefone</label>
           <input type="tel" class="panel-input" id="perfil-telefone" placeholder="(00) 00000-0000">
         </div>
+        <div class="panel-section">
+          <label>Senha atual (só para trocar o e-mail)</label>
+          <input type="password" class="panel-input" id="perfil-senha-atual" autocomplete="current-password" placeholder="Digite sua senha atual">
+        </div>
         <button class="panel-button" onclick="salvarPerfil()">
           Salvar alterações
         </button>
@@ -202,6 +206,7 @@
         const usuario = await UsuarioAPI.obterPerfil(usuarioId);
         document.getElementById("perfil-nome").value = usuario.nome || "";
         document.getElementById("perfil-email").value = usuario.email || "";
+        emailOriginal = usuario.email || "";
         document.getElementById("perfil-telefone").value = usuario.telefone || "";
       } catch (erro) {
         alert(`Erro ao carregar perfil: ${erro.message}`);
@@ -321,15 +326,15 @@
       abrirPainel("Segurança", `
         <div class="panel-section">
           <label>Senha atual</label>
-          <input type="password" class="panel-input" placeholder="Digite sua senha atual">
+          <input type="password" class="panel-input" id="seg-senha-atual" autocomplete="current-password" placeholder="Digite sua senha atual">
         </div>
         <div class="panel-section">
           <label>Nova senha</label>
-          <input type="password" class="panel-input" placeholder="Digite sua nova senha">
+          <input type="password" class="panel-input" id="seg-senha-nova" autocomplete="new-password" placeholder="Digite sua nova senha">
         </div>
         <div class="panel-section">
           <label>Confirmar nova senha</label>
-          <input type="password" class="panel-input" placeholder="Confirme sua nova senha">
+          <input type="password" class="panel-input" id="seg-senha-confirma" autocomplete="new-password" placeholder="Confirme sua nova senha">
         </div>
         <button class="panel-button" onclick="alterarSenha()">
           Alterar senha
@@ -357,51 +362,35 @@
       `);
     });
 
-    const themeButton = document.getElementById("toggle-theme");
-    const themeText = document.getElementById("theme-text");
-    const themeIcon = document.getElementById("theme-icon");
+    // Tema claro/escuro: tratado em api.js. Redeclarar themeButton aqui era
+    // erro de sintaxe e impedia todo este script (perfil, senha) de rodar.
 
-    function atualizarTema() {
-      if (document.body.classList.contains("dark-mode")) {
-        themeText.textContent = "Escuro";
-        themeIcon.setAttribute("data-lucide", "moon");
-      } else {
-        themeText.textContent = "Claro";
-        themeIcon.setAttribute("data-lucide", "sun");
-      }
-      lucide.createIcons();
-    }
-
-    if (localStorage.getItem("poupe-theme") === "dark") {
-      document.body.classList.add("dark-mode");
-    }
-
-    atualizarTema();
-
-    themeButton.addEventListener("click", function() {
-      document.body.classList.toggle("dark-mode");
-
-      if (document.body.classList.contains("dark-mode")) {
-        localStorage.setItem("poupe-theme", "dark");
-      } else {
-        localStorage.setItem("poupe-theme", "light");
-      }
-
-      atualizarTema();
-    });
+    // E-mail carregado no perfil: trocar o e-mail exige a senha atual (REV-002).
+    let emailOriginal = null;
 
     async function salvarPerfil() {
       const nome = document.getElementById("perfil-nome").value.trim();
       const email = document.getElementById("perfil-email").value.trim();
       const telefone = document.getElementById("perfil-telefone").value.trim();
+      const senhaAtual = document.getElementById("perfil-senha-atual").value;
 
       if (!nome || !email) {
         alert("Nome e e-mail são obrigatórios.");
         return;
       }
 
+      const dados = { nome, email, telefone };
+      if (email !== emailOriginal) {
+        if (!senhaAtual) {
+          alert("Para trocar o e-mail, digite sua senha atual.");
+          return;
+        }
+        dados.senha_atual = senhaAtual;
+      }
+
       try {
-        await UsuarioAPI.atualizarPerfil(usuarioId, { nome, email, telefone });
+        const usuario = await UsuarioAPI.atualizarPerfil(usuarioId, dados);
+        emailOriginal = usuario.email;
         alert("Alterações salvas com sucesso!");
         panel.classList.remove("active");
       } catch (erro) {
@@ -415,8 +404,32 @@
       alert("Alterações salvas com sucesso!");
     }
 
-    function alterarSenha() {
-      alert("Senha alterada com sucesso!");
+    // Antes só mostrava "Senha alterada" sem chamar o servidor.
+    async function alterarSenha() {
+      const atual = document.getElementById("seg-senha-atual").value;
+      const nova = document.getElementById("seg-senha-nova").value;
+      const confirma = document.getElementById("seg-senha-confirma").value;
+
+      if (!atual || !nova || !confirma) {
+        alert("Preencha a senha atual, a nova senha e a confirmação.");
+        return;
+      }
+      if (nova !== confirma) {
+        alert("A confirmação não confere com a nova senha.");
+        return;
+      }
+      if (nova === atual) {
+        alert("A nova senha precisa ser diferente da atual.");
+        return;
+      }
+
+      try {
+        await UsuarioAPI.alterarSenha(usuarioId, atual, nova);
+        alert("Senha alterada com sucesso! Outros aparelhos conectados foram desconectados.");
+        panel.classList.remove("active");
+      } catch (erro) {
+        alert(`Erro ao alterar a senha: ${erro.message}`);
+      }
     }
 
   if (localStorage.getItem("poupe-theme") === "dark") {

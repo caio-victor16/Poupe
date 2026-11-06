@@ -1,4 +1,9 @@
-const API_URL = 'http://127.0.0.1:5000';
+const API_URL = window.location.origin;
+// Somente para texto HTML e atributos entre aspas; não usar em JS, CSS ou URLs.
+function textoHTML(valor) {
+  const entidades = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  return String(valor ?? '').replace(/[&<>"']/g, caractere => entidades[caractere]);
+}
 const themeButton = document.getElementById("toggle-theme");
 const themeText = document.getElementById("theme-text");
 const themeIcon = document.getElementById("theme-icon");
@@ -47,7 +52,8 @@ if (themeButton) {
 async function requisicao(endpoint, metodo = 'GET', dados = null) {
   const config = {
     method: metodo,
-    headers: { 'Content-Type': 'application/json' }
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', 'X-Poupe-Request': '1' }
   };
   if (dados) config.body = JSON.stringify(dados);
 
@@ -67,6 +73,10 @@ async function requisicao(endpoint, metodo = 'GET', dados = null) {
   }
 
   if (!resposta.ok) {
+    if (resposta.status === 401 && endpoint !== '/login') {
+      localStorage.removeItem('usuarioId');
+      window.location.href = 'login.html';
+    }
     throw new Error((resultado && (resultado.mensagem || resultado.erro)) || 'Erro na requisição');
   }
 
@@ -78,7 +88,9 @@ const UsuarioAPI = {
   login: (email, senha) => requisicao('/login', 'POST', { email, senha }),
   cadastrar: (dados) => requisicao('/usuarios', 'POST', dados),
   obterPerfil: (usuarioId) => requisicao(`/usuarios/${usuarioId}`),
-  atualizarPerfil: (usuarioId, dados) => requisicao(`/usuarios/${usuarioId}`, 'PUT', dados)
+  atualizarPerfil: (usuarioId, dados) => requisicao(`/usuarios/${usuarioId}`, 'PUT', dados),
+  alterarSenha: (usuarioId, senhaAtual, novaSenha) =>
+    requisicao(`/usuarios/${usuarioId}`, 'PUT', { senha: novaSenha, senha_atual: senhaAtual })
 };
 
 // 2. MÓDULO DE CATEGORIAS
@@ -108,6 +120,55 @@ const BoletoAPI = {
   criar: (dadosBoleto) => requisicao('/boletos', 'POST', dadosBoleto)
 };
 
+// 5b. MÓDULO DE RECORRÊNCIAS DE GASTO (gastos fixos salvos no servidor)
+const RecorrenciaAPI = {
+  listarPorUsuario: (usuarioId) => requisicao(`/recorrencias/usuario/${usuarioId}`),
+  criar: (dados) => requisicao('/recorrencias', 'POST', dados),
+  excluir: (recorrenciaId) => requisicao(`/recorrencias/${recorrenciaId}`, 'DELETE'),
+  // Gera os gastos das recorrências vencidas até hoje e avança a próxima data.
+  processar: (usuarioId) => requisicao(`/recorrencias/usuario/${usuarioId}/processar`, 'POST')
+};
+
+// 5c. MÓDULO DE ORÇAMENTOS (limite mensal por categoria, no servidor)
+const OrcamentoAPI = {
+  // Retorna limite, gasto do mês atual, percentual e situação por categoria.
+  statusDoMes: (usuarioId) => requisicao(`/orcamentos/usuario/${usuarioId}`),
+  // Cria ou atualiza o limite da categoria (um por categoria).
+  definir: (dados) => requisicao('/orcamentos', 'POST', dados),
+  excluir: (orcamentoId) => requisicao(`/orcamentos/${orcamentoId}`, 'DELETE'),
+  // Cria alertas de orçamento (no máximo um por categoria por dia).
+  verificar: (usuarioId) => requisicao(`/orcamentos/usuario/${usuarioId}/verificar`, 'POST')
+};
+
+// 5d. MÓDULO DE RECEITAS (no servidor)
+const ReceitaAPI = {
+  listarPorUsuario: (usuarioId) => requisicao(`/receitas/usuario/${usuarioId}`),
+  criar: (dados) => requisicao('/receitas', 'POST', dados),
+  atualizar: (receitaId, dados) => requisicao(`/receitas/${receitaId}`, 'PUT', dados),
+  excluir: (receitaId) => requisicao(`/receitas/${receitaId}`, 'DELETE')
+};
+
+// 5e. CONTAS DO CAIXA, METAS, COFRINHOS E RECEITAS FIXAS (no servidor)
+function apiPorUsuario(prefixo) {
+  return {
+    listarPorUsuario: (usuarioId) => requisicao(`${prefixo}/usuario/${usuarioId}`),
+    criar: (dados) => requisicao(prefixo, 'POST', dados),
+    atualizar: (id, dados) => requisicao(`${prefixo}/${id}`, 'PUT', dados),
+    excluir: (id) => requisicao(`${prefixo}/${id}`, 'DELETE'),
+  };
+}
+const ContaAPI = apiPorUsuario('/contas');
+const MetaAPI = apiPorUsuario('/metas');
+const CofrinhoAPI = {
+  ...apiPorUsuario('/cofrinhos'),
+  // Soma no banco (sem ler-somar-gravar no navegador).
+  aportar: (id, valor) => requisicao(`/cofrinhos/${id}/aportar`, 'POST', { valor }),
+};
+const ReceitaRecorrenteAPI = {
+  ...apiPorUsuario('/receitas-recorrentes'),
+  processar: (usuarioId) => requisicao(`/receitas-recorrentes/usuario/${usuarioId}/processar`, 'POST'),
+};
+
 // 6. MÓDULO DE RELATÓRIOS E PREVISÕES
 const RelatorioAPI = {
   gerarResumo: (usuarioId) => requisicao(`/relatorios/usuario/${usuarioId}`),
@@ -125,8 +186,7 @@ const IAAPI = {
 
 };
 
-// Sessão simples baseada no id do usuário salvo no localStorage após o login.
-// (Não é autenticação de verdade — apenas guarda a navegação entre telas.)
+// O ID local é apenas uma conveniência da interface. O servidor valida o cookie.
 const Sessao = {
   obterUsuarioId: () => localStorage.getItem('usuarioId'),
   exigirLogin: () => {
@@ -137,16 +197,276 @@ const Sessao = {
     }
     return id;
   },
-  sair: () => {
+  sair: async () => {
+    await requisicao('/logout', 'POST');
     localStorage.removeItem('usuarioId');
     window.location.href = 'login.html';
   }
 };
 
 // ==========================================
+// DADOS DO SERVIDOR GUARDADOS NO NAVEGADOR
+// ==========================================
+// Orçamento, score, cofrinho, desperdício e caixa calculam no navegador a
+// partir de cópias locais (gastos, recorrências, orçamentos e receitas). DadosLocais.sincronizar() atualiza essas cópias com
+// o servidor ao abrir cada tela. Em falha, mantém a cópia anterior.
+
+function capitalizar(texto) {
+  if (!texto) return texto;
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+// Formato único do gasto no cache local (usado também por gastos.html).
+function gastoParaCache(g, nomeCategoriaPorId) {
+  return {
+    id: g.id_gasto,
+    descricao: g.descricao || "",
+    valor: g.valor,
+    data: g.data,
+    categoria: capitalizar(nomeCategoriaPorId[g.id_categoria] || "outros"),
+  };
+}
+
+// Recorrência do servidor no formato que caixa.html e score.html já leem.
+function recorrenciaParaCache(r) {
+  return {
+    id: `srv-${r.id_recorrencia}`,
+    id_recorrencia: r.id_recorrencia,
+    origem: "servidor",
+    descricao: r.descricao || "",
+    tipo: "Gasto Fixo",
+    valor: r.valor,
+    dia: r.dia_mes,
+    frequencia: r.frequencia,
+    proxima_data: r.proxima_data,
+    id_categoria: r.id_categoria,
+  };
+}
+
+// Orçamento do servidor; "categoria" no mesmo formato do cache de gastos.
+function orcamentoParaCache(o) {
+  return {
+    id: `srv-${o.id_orcamento}`,
+    id_orcamento: o.id_orcamento,
+    origem: "servidor",
+    id_categoria: o.id_categoria,
+    categoria: capitalizar(o.categoria),
+    limite: o.limite,
+    gasto_mes: o.gasto_mes,
+    percentual: o.percentual,
+    situacao: o.situacao,
+  };
+}
+
+// Receita do servidor no formato que score.html e relatorios.html já leem.
+function receitaParaCache(r) {
+  return {
+    id: `srv-${r.id_receita}`,
+    id_receita: r.id_receita,
+    origem: "servidor",
+    description: r.descricao,
+    category: r.categoria,
+    amount: r.valor,
+    date: r.data,
+  };
+}
+
+// Formatos antigos das telas, para o código de exibição continuar igual.
+function receitaFixaParaCache(r) {
+  return {
+    id: `srvr-${r.id_receita_recorrente}`,
+    id_receita_recorrente: r.id_receita_recorrente,
+    origem: "servidor",
+    descricao: r.descricao,
+    tipo: "Receita Fixa",
+    categoria: r.categoria,
+    valor: r.valor,
+    dia: r.dia_mes,
+    proxima_data: r.proxima_data,
+  };
+}
+function contaParaCache(c) {
+  return { id: `srv-${c.id_conta}`, id_conta: c.id_conta, origem: "servidor",
+           nome: c.nome, tipo: c.tipo, saldo: c.saldo };
+}
+function cofrinhoParaCache(c) {
+  return { id: `srv-${c.id_cofrinho}`, id_cofrinho: c.id_cofrinho, origem: "servidor",
+           titulo: c.titulo, alvo: c.valor_alvo, guardado: c.valor_guardado, prazoMeses: c.prazo_meses };
+}
+function metaParaCache(m) {
+  return { id: `srv-${m.id_meta}`, id_meta: m.id_meta, origem: "servidor",
+           title: m.titulo, target: m.valor_alvo, current: m.valor_guardado };
+}
+
+// Itens de uma cópia local que só existem neste navegador (não vieram do servidor).
+function itensLocais(nome) {
+  try {
+    const lista = JSON.parse(localStorage.getItem(chaveUsuario(nome)) || "[]");
+    return Array.isArray(lista) ? lista.filter(r => r && r.origem !== "servidor") : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// Receitas fixas e gastos fixos antigos que ainda não foram para o servidor.
+function recorrenciasLocais() {
+  return itensLocais("poupe_recorrencias");
+}
+
+// Envia ao servidor os itens antigos que só existem no navegador. converter(item)
+// devolve o corpo da requisição ou null (item inválido: continua local). Cada item
+// só sai do navegador depois que o servidor confirmar. Retorna quantos migraram.
+async function migrarItensLocais(nome, converter, criar) {
+  const locais = itensLocais(nome);
+  const migrados = new Set();
+  for (const [indice, item] of locais.entries()) {
+    const corpo = converter(item);
+    if (!corpo) continue;
+    try {
+      await criar(corpo);
+      migrados.add(indice);
+    } catch (erro) {
+      console.error(`Não foi possível migrar item de ${nome}:`, erro);
+    }
+  }
+  if (migrados.size) {
+    // Relê a cópia: mantém itens do servidor e os locais que não migraram.
+    const atual = JSON.parse(localStorage.getItem(chaveUsuario(nome)) || "[]");
+    const doServidor = Array.isArray(atual) ? atual.filter(i => i && i.origem === "servidor") : [];
+    localStorage.setItem(chaveUsuario(nome),
+      JSON.stringify([...doServidor, ...locais.filter((_, i) => !migrados.has(i))]));
+  }
+  return migrados.size;
+}
+
+// Regrava a cópia local `nome` com os itens do servidor + os que só existem aqui.
+async function sincronizarCopia(nome, listar, paraCache) {
+  try {
+    const doServidor = await listar();
+    localStorage.setItem(chaveUsuario(nome),
+      JSON.stringify([...doServidor.map(paraCache), ...itensLocais(nome)]));
+    return true;
+  } catch (erro) {
+    console.error(`Não foi possível atualizar ${nome}:`, erro);
+    return false;
+  }
+}
+
+const DadosLocais = {
+  async sincronizar() {
+    const usuarioId = Sessao.obterUsuarioId();
+    if (!usuarioId) return false;
+    // Gera gastos e receitas fixas vencidos antes de ler as listas.
+    const processamentos = await Promise.allSettled([
+      RecorrenciaAPI.processar(usuarioId),
+      ReceitaRecorrenteAPI.processar(usuarioId),
+    ]);
+    processamentos.filter(p => p.status === "rejected")
+      .forEach(p => console.error("Não foi possível processar as recorrências:", p.reason));
+    const resultados = await Promise.all([
+      this.sincronizarGastos(usuarioId),
+      this.sincronizarRecorrencias(usuarioId),
+      this.sincronizarOrcamentos(usuarioId),
+      this.sincronizarReceitas(usuarioId),
+    ]);
+    return resultados.every(Boolean);
+  },
+
+  async sincronizarReceitas(usuarioId = Sessao.obterUsuarioId()) {
+    try {
+      const doServidor = await ReceitaAPI.listarPorUsuario(usuarioId);
+      const lista = [...doServidor.map(receitaParaCache), ...itensLocais("poupePlus_incomes")];
+      localStorage.setItem(chaveUsuario("poupePlus_incomes"), JSON.stringify(lista));
+      // Chave antiga sem usuário (gravada pela exclusão antiga): vazava entre contas.
+      localStorage.removeItem("poupePlus_incomes");
+      return true;
+    } catch (erro) {
+      console.error("Não foi possível atualizar as receitas:", erro);
+      return false;
+    }
+  },
+
+  sincronizarContas(usuarioId = Sessao.obterUsuarioId()) {
+    return sincronizarCopia("poupe_contas", () => ContaAPI.listarPorUsuario(usuarioId), contaParaCache);
+  },
+
+  sincronizarCofrinhos(usuarioId = Sessao.obterUsuarioId()) {
+    return sincronizarCopia("poupe_cofrinhos", () => CofrinhoAPI.listarPorUsuario(usuarioId), cofrinhoParaCache);
+  },
+
+  sincronizarMetas(usuarioId = Sessao.obterUsuarioId()) {
+    return sincronizarCopia("poupePlus_goals", () => MetaAPI.listarPorUsuario(usuarioId), metaParaCache);
+  },
+
+  async sincronizarOrcamentos(usuarioId = Sessao.obterUsuarioId()) {
+    try {
+      const doServidor = await OrcamentoAPI.statusDoMes(usuarioId);
+      const lista = [...doServidor.map(orcamentoParaCache), ...itensLocais("poupe_orcamentos")];
+      localStorage.setItem(chaveUsuario("poupe_orcamentos"), JSON.stringify(lista));
+      return true;
+    } catch (erro) {
+      console.error("Não foi possível atualizar os orçamentos:", erro);
+      return false;
+    }
+  },
+
+  async sincronizarGastos(usuarioId = Sessao.obterUsuarioId()) {
+    try {
+      const [gastos, categorias] = await Promise.all([
+        GastoAPI.listarPorUsuario(usuarioId),
+        CategoriaAPI.listar(),
+      ]);
+      const nomes = {};
+      categorias.forEach(c => { nomes[c.id_categoria] = c.nome; });
+      localStorage.setItem(chaveUsuario("poupe_gastos"),
+        JSON.stringify(gastos.map(g => gastoParaCache(g, nomes))));
+      localStorage.removeItem("poupe_gastos");
+      return true;
+    } catch (erro) {
+      console.error("Não foi possível atualizar os gastos:", erro);
+      return false;
+    }
+  },
+
+  async sincronizarRecorrencias(usuarioId = Sessao.obterUsuarioId()) {
+    try {
+      const [gastosFixos, receitasFixas] = await Promise.all([
+        RecorrenciaAPI.listarPorUsuario(usuarioId),
+        ReceitaRecorrenteAPI.listarPorUsuario(usuarioId),
+      ]);
+      const lista = [
+        ...gastosFixos.filter(r => r.ativa).map(recorrenciaParaCache),
+        ...receitasFixas.filter(r => r.ativa).map(receitaFixaParaCache),
+        ...recorrenciasLocais(),
+      ];
+      localStorage.setItem(chaveUsuario("poupe_recorrencias"), JSON.stringify(lista));
+      return true;
+    } catch (erro) {
+      console.error("Não foi possível atualizar as recorrências:", erro);
+      return false;
+    }
+  },
+};
+
+// ==========================================
 // INTEGRAÇÃO COM AS PÁGINAS DO FRONT-END
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
+  if (!['/', '/login.html', '/cadastro.html'].includes(window.location.pathname)) {
+    requisicao('/sessao').then(sessao => {
+      if (localStorage.getItem('usuarioId') !== String(sessao.usuario_id)) {
+        localStorage.setItem('usuarioId', sessao.usuario_id);
+        window.location.reload();
+      }
+    }).catch(erro => console.error('Não foi possível validar a sessão:', erro));
+  }
+  document.querySelectorAll('a[href="login.html"]').forEach(link => {
+    if (!link.querySelector('[data-lucide="log-out"], .lucide-log-out') && !link.classList.contains('logout-card')) return;
+    link.addEventListener('click', async (event) => {
+      event.preventDefault();
+      try { await Sessao.sair(); } catch (erro) { alert(erro.message); }
+    });
+  });
   const caminhoAtual = window.location.pathname;
 
   // Lógica da tela de Cadastro (cadastro.html)
