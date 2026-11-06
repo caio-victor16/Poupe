@@ -9,5 +9,6 @@ env/
 
 /.test-deps/
 /instance/
-/docs/
+
+# Testes ficam só na máquina local (não vão para o GitHub).
 /tests/
