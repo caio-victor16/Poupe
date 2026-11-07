@@ -9,11 +9,14 @@
 
   <script src="vendor/lucide-1.69.0.min.js"></script>
   <script src="api.js" defer></script>
+  <link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="tema-escuro.css">
+  <script src="responsive.js" defer></script>
 </head>
 
-<body>
+<body class="app-page page-receitas">
 
-  <aside>
+  <aside class="app-sidebar">
     <div class="brand-wrapper">
     <div class="brand">poupe+</div>
     <i data-lucide="menu" class="menu-icon"></i>
@@ -26,10 +29,11 @@
     <li class="nav-item "><a href="caixa.html"><i data-lucide="landmark"></i>Caixa</a></li>
     <li class="nav-item"><a href="cofrinho.html"><i data-lucide="piggy-bank"></i>Cofrinho</a></li>
     <li class="nav-item"><a href="orcamento.html"><i data-lucide="pie-chart"></i>Orçamento</a></li>
-    <li class="nav-item"><a href="recorrencia.html"><i data-lucide="repeat"></i>Recorrência</a></li>
+    <li class="nav-item"><a href="boletos.html"><i data-lucide="receipt"></i>Boletos</a></li>
     <li class="nav-item"><a href="desperdicio.html"><i data-lucide="trending-down"></i>Desperdício</a></li>
     <li class="nav-item"><a href="score.html"><i data-lucide="award"></i>Score</a></li>
     <li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i>Relatórios</a></li>
+    <li class="nav-item"><a href="ia.html"><i data-lucide="sparkles"></i>IA Assistente</a></li>
     </ul>
     <ul class="nav-list nav-bottom">
     <li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i>Configurações</a></li>
@@ -42,7 +46,7 @@
      CONTEÚDO PRINCIPAL
 ========================= -->
 
-<main>
+<main class="app-main">
 
   <div class="header">
 
@@ -174,6 +178,13 @@
 
   </div>
 
+  <!-- Receitas fixas (antes ficavam na aba Recorrência) -->
+  <section class="fixas-card" id="fixasCard" hidden>
+    <h3><i data-lucide="repeat"></i> Receitas que repetem todo mês</h3>
+    <p class="fixas-ajuda">São lançadas sozinhas no dia. Para parar, remova daqui (as já lançadas continuam).</p>
+    <ul id="fixasLista"></ul>
+  </section>
+
 </main>
 
 
@@ -188,7 +199,7 @@
 
   <div class="modal">
 
-    <h2>Nova Receita</h2>
+    <h2 id="modalTitle">Nova Receita</h2>
 
 
     <form id="incomeForm">
@@ -291,6 +302,11 @@
       </div>
 
 
+      <label class="repetir-check" id="repetirGrupo">
+        <input type="checkbox" id="incomeRepeat">
+        <span>Repetir todo mês (salário, aluguel recebido…)</span>
+      </label>
+
       <!-- Botões -->
 
       <div class="modal-actions">
@@ -371,6 +387,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const nextMonth = document.getElementById('nextMonth');
   const monthPicker = document.getElementById('monthPicker');
   const botaoSalvar = incomeForm.querySelector('button[type="submit"]');
+  const modalTitle = document.getElementById('modalTitle');
+  const repetirInput = document.getElementById('incomeRepeat');
+  const repetirGrupo = document.getElementById('repetirGrupo');
+  let editandoId = null;   // id_receita em edição; null = nova receita
 
   // Abre no mês atual (antes estava fixo em agosto de 2026).
   const hoje = new Date();
@@ -404,6 +424,43 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function atualizar() {
     await DadosLocais.sincronizarReceitas(usuarioId);
     renderIncomes();
+    await renderFixas();
+  }
+
+  // Mesmo dia no mês seguinte (31 → último dia quando o mês é menor).
+  function mesSeguinte(iso) {
+    const [ano, mes, dia] = iso.split('-').map(Number);
+    const ultimo = new Date(ano, mes + 1, 0).getDate();
+    const d = new Date(ano, mes, Math.min(dia, ultimo));
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  async function renderFixas() {
+    let fixas = [];
+    try {
+      fixas = (await ReceitaRecorrenteAPI.listarPorUsuario(usuarioId)).filter(r => r.ativa);
+    } catch (erro) {
+      console.error('Receitas fixas:', erro);
+    }
+    document.getElementById('fixasCard').hidden = fixas.length === 0;
+    document.getElementById('fixasLista').innerHTML = fixas.map(r => `
+      <li>
+        <span><b>${textoHTML(r.descricao)}</b> · ${textoHTML(r.categoria)} · todo dia ${textoHTML(r.dia_mes)}</span>
+        <span class="fixas-valor">R$ ${formatMoney(r.valor)}
+          <button class="delete-btn" data-fixa="${textoHTML(r.id_receita_recorrente)}" title="Parar de repetir" aria-label="Parar de repetir"><i data-lucide="trash-2"></i></button>
+        </span>
+      </li>`).join('');
+    lucide.createIcons();
+    document.querySelectorAll('[data-fixa]').forEach(botao => botao.addEventListener('click', async () => {
+      if (!confirm('Parar de repetir esta receita? As já lançadas continuam.')) return;
+      try {
+        await ReceitaRecorrenteAPI.excluir(botao.dataset.fixa);
+      } catch (erro) {
+        alert(`Não foi possível remover: ${erro.message}`);
+        return;
+      }
+      await renderFixas();
+    }));
   }
 
   function renderIncomes() {
@@ -433,7 +490,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           <td class="text-muted">${textoHTML(item.category)}</td>
           <td class="text-right font-bold">R$ ${formatMoney(item.amount)}</td>
           <td class="action-cell">
-            <button class="delete-btn" data-id="${textoHTML(chave)}" title="Excluir">
+            ${item.origem === 'servidor' ? `<button class="edit-btn" data-id="${textoHTML(chave)}" title="Editar" aria-label="Editar">
+              <i data-lucide="pencil"></i>
+            </button>` : ''}
+            <button class="delete-btn" data-id="${textoHTML(chave)}" title="Excluir" aria-label="Excluir">
               <i data-lucide="trash-2"></i>
             </button>
           </td>`;
@@ -449,6 +509,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.delete-btn').forEach(button => {
       button.addEventListener('click', event => deleteIncome(event.currentTarget.getAttribute('data-id')));
     });
+    document.querySelectorAll('.edit-btn').forEach(button => {
+      button.addEventListener('click', event => abrirEdicao(event.currentTarget.getAttribute('data-id')));
+    });
+  }
+
+  // Edição: abre o mesmo formulário preenchido; salvar faz PUT em vez de POST.
+  function abrirEdicao(chave) {
+    const item = pegarReceitas().find(r => r.id === chave);
+    if (!item) return;
+    editandoId = item.id_receita;
+    modalTitle.textContent = 'Editar Receita';
+    repetirGrupo.hidden = true;   // repetir só ao criar
+    document.getElementById('incomeDesc').value = item.description;
+    document.getElementById('incomeCategory').value = item.category;
+    document.getElementById('incomeValue').value = item.amount;
+    document.getElementById('incomeDate').value = item.date;
+    modal.classList.add('active');
   }
 
   prevMonth.addEventListener('click', () => {
@@ -470,10 +547,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderIncomes();
   });
 
-  btnOpenModal.addEventListener('click', () => modal.classList.add('active'));
+  btnOpenModal.addEventListener('click', () => {
+    editandoId = null;
+    modalTitle.textContent = 'Nova Receita';
+    repetirGrupo.hidden = false;
+    modal.classList.add('active');
+  });
 
   function closeModal() {
     modal.classList.remove('active');
+    editandoId = null;
+    modalTitle.textContent = 'Nova Receita';
     incomeForm.reset();
     incomeDateInput.value = hojeISO();
   }
@@ -493,7 +577,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     botaoSalvar.disabled = true;
     try {
-      await ReceitaAPI.criar({ descricao, categoria, valor, data });
+      const dados = { descricao, categoria, valor, data };
+      if (editandoId) {
+        await ReceitaAPI.atualizar(editandoId, dados);
+      } else {
+        await ReceitaAPI.criar(dados);
+        // Repetir: a deste mês acabou de ser criada; as próximas, a partir do mês seguinte.
+        if (repetirInput.checked) {
+          await ReceitaRecorrenteAPI.criar({
+            descricao, categoria, valor, dia_mes: Number(data.split('-')[2]), proxima_data: mesSeguinte(data),
+          });
+        }
+      }
     } catch (erro) {
       alert(`Não foi possível salvar: ${erro.message}`);
       return;

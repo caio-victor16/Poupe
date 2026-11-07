@@ -1,27 +1,20 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>IA Assistente - Poupe+</title>
-
-<link rel="stylesheet" href="ia.css">
-<script src="api.js" defer></script>
-
-<script src="vendor/lucide-1.69.0.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IA Assistente | Poupe+</title>
+  <link rel="stylesheet" href="ia.css">
+  <script src="vendor/lucide-1.69.0.min.js" defer></script>
+  <script src="api.js" defer></script>
+  <script src="ia.js" defer></script>
+  <link rel="stylesheet" href="responsive.css">
+  <script src="responsive.js" defer></script>
 </head>
-
-<body>
-
+<body class="app-page page-ia">
 <div class="layout">
-
-  <aside>
-    <div class="brand-wrapper">
-    <div class="brand">poupe+</div>
-    <i data-lucide="menu" class="menu-icon"></i>
-    </div>
+  <aside class="sidebar app-sidebar" id="navigation" aria-label="Menu principal">
+    <div class="brand-wrapper"><a class="brand" href="inicio.html" aria-label="Poupe+, início">poupe+</a><i data-lucide="menu" class="menu-icon" aria-hidden="true"></i></div>
     <nav class="nav-container">
     <ul class="nav-list">
     <li class="nav-item"><a href="inicio.html"><i data-lucide="home"></i>Início</a></li>
@@ -30,269 +23,52 @@
     <li class="nav-item "><a href="caixa.html"><i data-lucide="landmark"></i>Caixa</a></li>
     <li class="nav-item"><a href="cofrinho.html"><i data-lucide="piggy-bank"></i>Cofrinho</a></li>
     <li class="nav-item"><a href="orcamento.html"><i data-lucide="pie-chart"></i>Orçamento</a></li>
-    <li class="nav-item"><a href="recorrencia.html"><i data-lucide="repeat"></i>Recorrência</a></li>
+    <li class="nav-item"><a href="boletos.html"><i data-lucide="receipt"></i>Boletos</a></li>
     <li class="nav-item"><a href="desperdicio.html"><i data-lucide="trending-down"></i>Desperdício</a></li>
     <li class="nav-item"><a href="score.html"><i data-lucide="award"></i>Score</a></li>
     <li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i>Relatórios</a></li>
+    <li class="nav-item active"><a href="ia.html" aria-current="page"><i data-lucide="sparkles"></i>IA Assistente</a></li>
     </ul>
     <ul class="nav-list nav-bottom">
     <li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i>Configurações</a></li>
     <li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i>Sair</a></li>
     </ul>
     </nav>
-    </aside>
-    
-
-
-<!-- ÁREA PRINCIPAL -->
-<main>
-
-<!-- HEADER -->
-<header class="top-header">
-
-<div class="user-info">
-
-<h2>
-Olá
-</h2>
-
-<div class="month">
-Agosto de 2026
-<i data-lucide="chevron-down"></i>
+  </aside>
+  <main class="app-main">
+    <section class="chat-area" aria-label="Conversa com o assistente financeiro">
+      <div class="chat-content">
+        <div class="chat-toolbar"><span class="assistant-label"><i data-lucide="sparkles" aria-hidden="true"></i>Assistente Poupe+</span><span class="beta-badge">BETA</span></div>
+        <div class="messages" id="messages" role="log" aria-label="Mensagens da conversa" aria-live="polite" aria-relevant="additions text">
+          <div class="welcome" id="welcome">
+            <div class="welcome-icon"><i data-lucide="sparkles" aria-hidden="true"></i></div>
+            <p class="eyebrow">UM PASSO DE CADA VEZ</p>
+            <h1>Mais clareza para<br>cuidar do seu dinheiro.</h1>
+            <p class="welcome-description">Vamos organizar suas ideias? Tire uma dúvida, pense em uma meta ou descubra por onde começar.</p>
+            <div class="suggestions" aria-label="Sugestões de perguntas">
+              <button class="suggestion" type="button" data-prompt="Olhando meus gastos e receitas deste mês, como posso organizar meu orçamento de um jeito simples?">
+                <i data-lucide="wallet" aria-hidden="true"></i><strong>Organizar meu mês</strong><span>Um orçamento que cabe na rotina.</span><i class="suggestion-arrow" data-lucide="arrow-up-right" aria-hidden="true"></i>
+              </button>
+              <button class="suggestion" type="button" data-prompt="Em quais categorias estou gastando mais este mês e onde dá para reduzir sem abrir mão do que é importante?">
+                <i data-lucide="trending-down" aria-hidden="true"></i><strong>Gastar com intenção</strong><span>Encontre oportunidades de economizar.</span><i class="suggestion-arrow" data-lucide="arrow-up-right" aria-hidden="true"></i>
+              </button>
+              <button class="suggestion" type="button" data-prompt="Com a minha situação atual, quanto consigo guardar por mês para uma reserva de emergência?">
+                <i data-lucide="piggy-bank" aria-hidden="true"></i><strong>Dar o primeiro passo</strong><span>Planeje sua reserva de emergência.</span><i class="suggestion-arrow" data-lucide="arrow-up-right" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <form class="chat-input-area" id="chatForm">
+          <label class="sr-only" for="messageInput">Sua mensagem para o assistente</label>
+          <div class="input-box">
+            <textarea id="messageInput" placeholder="O que você quer organizar hoje?" rows="2" maxlength="2000" aria-describedby="inputHint"></textarea>
+            <div class="composer-bottom"><span class="input-hint" id="inputHint">Enter para enviar · Shift + Enter para nova linha</span><span class="character-count" id="characterCount">0 / 2000</span><button id="sendButton" type="submit" aria-label="Enviar mensagem" disabled><i data-lucide="arrow-up" aria-hidden="true"></i></button></div>
+          </div>
+          <p class="disclaimer">A IA usa um resumo dos seus dados no Poupe+ (gastos, receitas, metas) e envia ao Google Gemini para responder. Ela pode cometer erros: revise as respostas e não compartilhe senhas ou dados bancários.</p>
+        </form>
+      </div>
+    </section>
+  </main>
 </div>
-
-</div>
-
-
-<div class="header-right">
-
-<div class="notification">
-<i data-lucide="bell"></i>
-</div>
-
-<div class="profile">
-D
-</div>
-
-</div>
-
-</header>
-
-
-<!-- ÁREA DO CHAT -->
-<section class="chat-area">
-
-<!-- CONTEÚDO DO CHAT -->
-<div class="chat-content">
-
-<!-- TÍTULO -->
-<div class="chat-title">
-
-<div class="title-icon">
-<i data-lucide="sparkles"></i>
-</div>
-
-<div>
-
-<h1>
-IA Assistente
-<span>BETA</span>
-</h1>
-
-<p>
-Seu assistente financeiro pessoal.
-</p>
-
-</div>
-
-</div>
-
-
-<!-- MENSAGENS -->
-<div class="messages">
-
-<!-- PRIMEIRA MENSAGEM DA IA -->
-<div class="message ai-message">
-
-<div class="message-avatar">
-<i data-lucide="sparkles"></i>
-</div>
-
-<div class="message-box">
-
-<p>
-Olá! Eu sou seu assistente financeiro.
-</p>
-
-<p>
-Posso te ajudar a entender seus gastos,
-organizar suas finanças e planejar suas metas.
-</p>
-
-<p>
-Como posso te ajudar hoje?
-</p>
-
-</div>
-
-</div>
-
-</div>
-
-
-<!-- INPUT -->
-<div class="chat-input-area">
-
-<div class="input-box">
-
-<textarea
-id="messageInput"
-placeholder="Digite sua mensagem..."
-rows="1"
-></textarea>
-
-<button id="sendButton">
-<i data-lucide="send"></i>
-</button>
-
-</div>
-
-<p class="disclaimer">
-A IA pode cometer erros. Sempre revise as informações.
-</p>
-
-</div>
-
-</div>
-
-
-<!-- LATERAL DIREITA -->
-<aside class="right-panel">
-
-<div class="side-card suggestions-card">
-
-<div class="card-title">
-<i data-lucide="lightbulb"></i>
-
-<h3>Sugestões para você</h3>
-</div>
-
-<div class="suggestion-placeholder"></div>
-<div class="suggestion-placeholder"></div>
-<div class="suggestion-placeholder"></div>
-<div class="suggestion-placeholder"></div>
-
-</div>
-
-
-<div class="side-card summary-card">
-
-<div class="card-title">
-<i data-lucide="pie-chart"></i>
-
-<h3>Resumo rápido</h3>
-</div>
-
-<div class="summary-placeholder"></div>
-<div class="summary-placeholder"></div>
-<div class="summary-placeholder"></div>
-
-</div>
-
-
-<div class="side-card remember-card">
-
-<div class="card-title">
-<i data-lucide="calendar-check"></i>
-
-<h3></h3>
-</div>
-
-</div>
-
-</aside>
-
-</section>
-
-</main>
-
-</div>
-
-
-<script>
-    if (localStorage.getItem("poupe-theme") === "dark") {
-    document.body.classList.add("dark-mode");
-  }
-</script>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  const messages = document.querySelector(".messages");
-  const input = document.getElementById("messageInput");
-  const button = document.getElementById("sendButton");
-  let enviando = false;
-
-  function adicionarMensagem(texto, tipo, extraClasse) {
-    const msg = document.createElement("div");
-    msg.className = "message " + tipo;
-
-    const avatar = document.createElement("div");
-    avatar.className = "message-avatar";
-    avatar.innerHTML = '<i data-lucide="' + (tipo === "user-message" ? "user" : "sparkles") + '"></i>';
-
-    const box = document.createElement("div");
-    box.className = "message-box" + (extraClasse ? " " + extraClasse : "");
-    box.textContent = texto; // textContent evita injeção de HTML
-
-    msg.appendChild(avatar);
-    msg.appendChild(box);
-    messages.appendChild(msg);
-
-    if (window.lucide) lucide.createIcons();
-    messages.scrollTop = messages.scrollHeight;
-    return msg;
-  }
-
-  async function enviar() {
-    const texto = input.value.trim();
-    if (!texto || enviando) return;
-
-    enviando = true;
-    button.disabled = true;
-    input.value = "";
-
-    adicionarMensagem(texto, "user-message");
-    const carregando = adicionarMensagem("Pensando...", "ai-message", "typing");
-
-    try {
-      const resultado = await IAAPI.conversar(texto);
-      carregando.remove();
-      adicionarMensagem(resultado.resposta, "ai-message");
-    } catch (erro) {
-      carregando.remove();
-      const msg = (erro instanceof TypeError)
-        ? "Não consegui falar com o servidor. Verifique se o backend está rodando."
-        : erro.message;
-      adicionarMensagem(msg, "ai-message error-message");
-    } finally {
-      enviando = false;
-      button.disabled = false;
-      input.focus();
-    }
-  }
-
-  button.addEventListener("click", enviar);
-
-  // Enter envia; Shift+Enter quebra linha
-  input.addEventListener("keydown", function (e) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      enviar();
-    }
-  });
-});
-</script>
-
 </body>
-
 </html>

@@ -1,0 +1,212 @@
+/* =============================================================
+   TEMA ESCURO ÚNICO — mesma paleta da tela da IA (ia.css).
+   Carregado por último em todas as telas do app. Para mudar o tema
+   escuro, mude as variáveis abaixo (e as de body.dark-mode em ia.css).
+   ============================================================= */
+html body.dark-mode {
+  color-scheme: dark;
+  /* Paleta da IA */
+  --escuro-fundo: #111c18;
+  --escuro-superficie: #192720;
+  --escuro-cabecalho: #15221c;
+  --escuro-texto: #e5eee8;
+  --escuro-suave: #a5b8ac;
+  --escuro-borda: #304238;
+  --escuro-destaque: #9ad9b5;
+  --escuro-destaque-fundo: #263e31;
+  --escuro-hover: #23372c;
+  --escuro-erro-fundo: #422723;
+  --escuro-erro-texto: #ffc1b8;
+  --escuro-botao: #07583e;
+
+  /* Variáveis que as telas já usam */
+  --bg-color: var(--escuro-fundo);
+  --card-bg: var(--escuro-superficie);
+  --border-color: var(--escuro-borda);
+  --border: var(--escuro-borda);
+  --input-bg: var(--escuro-fundo);
+  --text-dark: var(--escuro-texto);
+  --text-primary: var(--escuro-texto);
+  --text-secondary: var(--escuro-suave);
+  --text-muted: var(--escuro-suave);
+  --primary-light: var(--escuro-destaque-fundo);
+  /* Destaques (títulos, valores, ícones) ficam verde-claro, como na IA. Os botões
+     principais continuam verde-escuro (regra dos botões, abaixo). */
+  --primary: var(--escuro-destaque);
+
+  background-color: var(--escuro-fundo) !important;
+  color: var(--escuro-texto) !important;
+}
+
+/* Textos: claros por padrão, secundários em verde-acinzentado */
+html body.dark-mode,
+html body.dark-mode h1, html body.dark-mode h2, html body.dark-mode h3, html body.dark-mode h4,
+html body.dark-mode p, html body.dark-mode span, html body.dark-mode strong, html body.dark-mode b,
+html body.dark-mode label, html body.dark-mode td, html body.dark-mode li, html body.dark-mode div {
+  color: var(--escuro-texto);
+}
+html body.dark-mode small, html body.dark-mode .text-muted, html body.dark-mode th,
+html body.dark-mode .empty-msg small, html body.dark-mode .boleto-prazo,
+html body.dark-mode .fixas-ajuda, html body.dark-mode .boleto-card span,
+html body.dark-mode .boleto-card small {
+  color: var(--escuro-suave) !important;
+}
+
+/* Área principal no fundo; menu e cartões na superfície (como na IA) */
+html body.dark-mode main, html body.dark-mode .app-main {
+  background-color: var(--escuro-fundo) !important;
+}
+html body.dark-mode aside, html body.dark-mode .sidebar, html body.dark-mode .app-sidebar {
+  background-color: var(--escuro-superficie) !important;
+  border-color: var(--escuro-borda) !important;
+}
+html body.dark-mode .nav-bottom { border-color: var(--escuro-borda) !important; }
+html body.dark-mode .brand, html body.dark-mode .brand *, html body.dark-mode .menu-icon {
+  color: var(--escuro-texto) !important;
+}
+
+/* Menu lateral */
+html body.dark-mode .nav-item a, html body.dark-mode .nav-item a * {
+  color: var(--escuro-suave) !important;
+}
+html body.dark-mode .nav-item a:hover {
+  background-color: var(--escuro-hover) !important;
+}
+html body.dark-mode .nav-item a:hover, html body.dark-mode .nav-item a:hover * {
+  color: var(--escuro-texto) !important;
+}
+html body.dark-mode .nav-item.active, html body.dark-mode .nav-item.active a {
+  background-color: var(--escuro-destaque-fundo) !important;
+  border-radius: 8px;
+}
+html body.dark-mode .nav-item.active a, html body.dark-mode .nav-item.active a *,
+html body.dark-mode .nav-item.active * {
+  color: var(--escuro-destaque) !important;
+}
+
+/* Cartões, painéis e janelas */
+html body.dark-mode :is(.table-card, .form-card, .stat-card, .chart-card, .goal-card, .setting-card,
+  .boleto-card, .summary-card, .card, .modal, .config-panel, .panel, .total-footer-card,
+  .fixas-card, .month-selector, .alert-card, .alert-item, .side-card, .score-card,
+  .resumo-card, .metric-card, .kpi-card, .info-card, .header-card) {
+  background-color: var(--escuro-superficie) !important;
+  border-color: var(--escuro-borda) !important;
+}
+html body.dark-mode .modal-overlay { background: rgba(0, 0, 0, 0.6) !important; }
+
+/* Tabelas */
+html body.dark-mode table th, html body.dark-mode .expenses-table th {
+  background-color: var(--escuro-cabecalho) !important;
+  color: var(--escuro-suave) !important;
+  border-color: var(--escuro-borda) !important;
+}
+html body.dark-mode table td { border-color: var(--escuro-borda) !important; }
+html body.dark-mode table tbody tr:hover { background-color: var(--escuro-hover) !important; }
+
+/* Campos */
+html body.dark-mode input:not([type=checkbox]):not([type=radio]), html body.dark-mode select,
+html body.dark-mode textarea, html body.dark-mode .panel-input {
+  background-color: var(--escuro-fundo) !important;
+  border-color: var(--escuro-borda) !important;
+  color: var(--escuro-texto) !important;
+}
+html body.dark-mode input::placeholder, html body.dark-mode textarea::placeholder {
+  color: var(--escuro-suave) !important;
+  opacity: 0.8;
+}
+html body.dark-mode input:focus, html body.dark-mode select:focus, html body.dark-mode textarea:focus {
+  border-color: var(--escuro-destaque) !important;
+  box-shadow: 0 0 0 2px var(--escuro-destaque-fundo) !important;
+}
+html body.dark-mode input[type=checkbox] { accent-color: var(--escuro-destaque); }
+
+/* Botões: principais em verde (como o enviar da IA), secundários na superfície */
+html body.dark-mode :is(.btn-add, .btn-submit-large, .btn-save, .panel-button, .btn-submit, .btn-primary) {
+  background-color: var(--escuro-botao) !important;
+  border-color: var(--escuro-botao) !important;
+}
+html body.dark-mode :is(.btn-add, .btn-submit-large, .btn-save, .panel-button, .btn-submit, .btn-primary),
+html body.dark-mode :is(.btn-add, .btn-submit-large, .btn-save, .panel-button, .btn-submit, .btn-primary) * {
+  color: #fff !important;
+}
+html body.dark-mode :is(.btn-add, .btn-submit-large, .btn-save, .panel-button):hover {
+  background-color: #04724c !important;
+}
+html body.dark-mode :is(.btn-filter, .btn-cancel, .tab-btn, .month-btn, .btn-back, .btn-secondary) {
+  background-color: var(--escuro-superficie) !important;
+  border-color: var(--escuro-borda) !important;
+  color: var(--escuro-texto) !important;
+}
+html body.dark-mode .tab-btn.active {
+  background-color: var(--escuro-destaque-fundo) !important;
+  border-color: var(--escuro-destaque-fundo) !important;
+  color: var(--escuro-destaque) !important;
+}
+html body.dark-mode .edit-btn { color: var(--escuro-suave) !important; }
+html body.dark-mode :is(.edit-btn, .delete-btn, .btn-filter, .btn-cancel):hover {
+  background-color: var(--escuro-hover) !important;
+}
+html body.dark-mode .delete-btn, html body.dark-mode .delete-btn * { color: var(--escuro-erro-texto) !important; }
+
+/* Destaques, selos e progresso */
+html body.dark-mode :is(.cat-badge, .boleto-selo) {
+  background-color: var(--escuro-destaque-fundo) !important;
+  color: var(--escuro-destaque) !important;
+}
+html body.dark-mode .boleto-selo * { color: var(--escuro-destaque) !important; }
+html body.dark-mode .boleto-card strong, html body.dark-mode .table-footer strong,
+html body.dark-mode .goal-value, html body.dark-mode .fixas-valor {
+  color: var(--escuro-destaque) !important;
+}
+html body.dark-mode .boleto-card.alerta strong, html body.dark-mode .boleto-vencido .boleto-prazo {
+  color: var(--escuro-erro-texto) !important;
+}
+html body.dark-mode :is(.progress-bar, .progress-track) { background-color: var(--escuro-borda) !important; }
+html body.dark-mode .form-feedback.erro, html body.dark-mode .error-message {
+  background-color: var(--escuro-erro-fundo) !important;
+  color: var(--escuro-erro-texto) !important;
+}
+html body.dark-mode a:not(.nav-item a):not([class*=btn]) { color: var(--escuro-destaque); }
+html body.dark-mode :focus-visible { outline-color: var(--escuro-destaque); }
+
+/* Cores da tela inicial */
+html body.dark-mode .avatar-circle {
+  background-color: var(--escuro-destaque-fundo) !important;
+  color: var(--escuro-destaque) !important;
+}
+html body.dark-mode :is(.icon-btn, .btn-full-report) {
+  background-color: var(--escuro-superficie) !important;
+  border-color: var(--escuro-borda) !important;
+  color: var(--escuro-texto) !important;
+}
+html body.dark-mode .btn-full-report:hover { background-color: var(--escuro-hover) !important; }
+
+/* Ícones dos alertas */
+html body.dark-mode .alert-icon-box { background-color: var(--escuro-destaque-fundo) !important; }
+html body.dark-mode .alert-icon-box.danger { background-color: var(--escuro-erro-fundo) !important; }
+html body.dark-mode .alert-icon-box.danger, html body.dark-mode .alert-icon-box.danger * { color: var(--escuro-erro-texto) !important; }
+html body.dark-mode .alert-icon-box.warning, html body.dark-mode .alert-icon-box.warning * { color: #f2d48a !important; }
+html body.dark-mode .alert-icon-box.success, html body.dark-mode .alert-icon-box.success * { color: var(--escuro-destaque) !important; }
+
+/* Cores fixas escritas direto no HTML (style="...") em Caixa, Cofrinho,
+   Desperdício e Orçamento: no escuro, viram as cores da paleta. */
+html body.dark-mode :is([style*="#faf5ff"], [style*="#f0fdf4"], [style*="#eff6ff"]) {
+  background: var(--escuro-superficie) !important;
+}
+html body.dark-mode [style*="#fff5f5"] { background: var(--escuro-erro-fundo) !important; }
+html body.dark-mode [style*="#f3e8ff"] { background: var(--escuro-destaque-fundo) !important; }
+html body.dark-mode [style*="#e9d5ff"] { border-color: var(--escuro-borda) !important; }
+html body.dark-mode :is([style*="color: #581c87"], [style*="color: #6b21a8"], [style*="color: #7e22ce"],
+  [style*="color: #166534"], [style*="color: #15803d"], [style*="color: #1e40af"], [style*="color: #1d4ed8"]),
+html body.dark-mode :is([style*="color: #581c87"], [style*="color: #6b21a8"], [style*="color: #7e22ce"],
+  [style*="color: #166534"], [style*="color: #15803d"], [style*="color: #1e40af"], [style*="color: #1d4ed8"]) * {
+  color: var(--escuro-destaque) !important;
+}
+html body.dark-mode :is([style*="color: #dc2626"], [style*="color: #7f1d1d"]) {
+  color: var(--escuro-erro-texto) !important;
+}
+
+/* Saldo total na tela inicial */
+html body.dark-mode .total-balance { border-bottom-color: var(--escuro-borda) !important; }
+html body.dark-mode .total-balance strong { color: var(--escuro-destaque) !important; }
+html body.dark-mode .total-balance strong.negativo { color: var(--escuro-erro-texto) !important; }

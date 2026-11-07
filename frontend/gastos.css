@@ -384,6 +384,28 @@ width: 17px;
 height: 17px;
 }
 
+/* Editar (cofrinho, caixa) */
+.edit-btn {
+background: none;
+border: none;
+color: #64748b;
+cursor: pointer;
+opacity: 0.6;
+padding: 5px;
+border-radius: 6px;
+transition: 0.2s;
+}
+
+.edit-btn:hover {
+opacity: 1;
+background-color: #f1f5f9;
+}
+
+.edit-btn svg {
+width: 17px;
+height: 17px;
+}
+
 
 /* =========================
 LISTA VAZIA
@@ -735,21 +757,21 @@ TEMA ESCURO
 ========================= */
 
 body.dark-mode {
---bg-color: #0f172a;
---card-bg: #1e293b;
---text-dark: #ffffff;
---text-muted: #cbd5e1;
---border-color: #334155;
---input-bg: #0f172a;
+--bg-color: #111c18;
+--card-bg: #192720;
+--text-dark: #e5eee8;
+--text-muted: #a5b8ac;
+--border-color: #304238;
+--input-bg: #111c18;
 
-background-color: #0f172a !important;
-color: #ffffff !important;
+background-color: #111c18 !important;
+color: #e5eee8 !important;
 }
 
 body.dark-mode aside,
 body.dark-mode main {
-background-color: #1e293b !important;
-border-color: #334155 !important;
+background-color: #192720 !important;
+border-color: #304238 !important;
 }
 
 body.dark-mode .brand,
@@ -758,20 +780,20 @@ body.dark-mode .header h1,
 body.dark-mode .form-header h1,
 body.dark-mode .form-group label,
 body.dark-mode .current-month {
-color: #ffffff !important;
+color: #e5eee8 !important;
 }
 
 body.dark-mode .nav-item a {
-color: #ffffff !important;
+color: #e5eee8 !important;
 }
 
 body.dark-mode .nav-item.active a {
-background-color: #065f46 !important;
-color: #ffffff !important;
+background-color: #263e31 !important;
+color: #e5eee8 !important;
 }
 
 body.dark-mode .nav-item a:hover {
-background-color: #334155 !important;
+background-color: #304238 !important;
 }
 
 body.dark-mode .btn-filter,
@@ -780,68 +802,137 @@ body.dark-mode .tab-btn,
 body.dark-mode .table-card,
 body.dark-mode .empty-msg,
 body.dark-mode .form-card {
-background-color: #1e293b !important;
-border-color: #334155 !important;
-color: #ffffff !important;
+background-color: #192720 !important;
+border-color: #304238 !important;
+color: #e5eee8 !important;
 }
 
 body.dark-mode .tab-btn {
-color: #cbd5e1 !important;
+color: #a5b8ac !important;
 }
 
 body.dark-mode .tab-btn.active {
-background-color: #065f46 !important;
-border-color: #065f46 !important;
-color: #ffffff !important;
+background-color: #263e31 !important;
+border-color: #263e31 !important;
+color: #e5eee8 !important;
 }
 
 body.dark-mode .expenses-table th {
-background-color: #172033 !important;
-color: #cbd5e1 !important;
+background-color: #15221c !important;
+color: #a5b8ac !important;
 }
 
 body.dark-mode .expenses-table td {
-border-color: #334155 !important;
-color: #ffffff !important;
+border-color: #304238 !important;
+color: #e5eee8 !important;
 }
 
 body.dark-mode .expenses-table tbody tr:hover {
-background-color: #263449 !important;
+background-color: #23372c !important;
 }
 
 body.dark-mode .form-group input,
 body.dark-mode .form-group select {
-background-color: #0f172a !important;
-border-color: #334155 !important;
-color: #ffffff !important;
+background-color: #111c18 !important;
+border-color: #304238 !important;
+color: #e5eee8 !important;
 }
 
 body.dark-mode .form-group input::placeholder {
-color: #94a3b8 !important;
+color: #a5b8ac !important;
 }
 
 body.dark-mode .table-footer {
-border-color: #334155 !important;
+border-color: #304238 !important;
 }
 
 body.dark-mode .table-footer strong {
-color: #4ade80 !important;
+color: #9ad9b5 !important;
 }
 
 body.dark-mode .month-btn,
 body.dark-mode .btn-back {
-color: #ffffff !important;
+color: #e5eee8 !important;
 }
 
 body.dark-mode .empty-msg p,
 body.dark-mode .empty-msg small {
-color: #ffffff !important;
+color: #e5eee8 !important;
 }
 
 body.dark-mode .text-muted {
-color: #cbd5e1 !important;
+color: #a5b8ac !important;
 }
 
 body.dark-mode .nav-bottom {
-border-color: #334155 !important;
+border-color: #304238 !important;
 }
+
+/* =========================
+BOLETOS
+========================= */
+
+.boleto-resumo {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+gap: 16px;
+margin-bottom: 24px;
+}
+
+.boleto-card {
+background: var(--card-bg);
+border: 1px solid var(--border-color);
+border-radius: 12px;
+padding: 16px 18px;
+display: flex;
+flex-direction: column;
+gap: 4px;
+}
+
+.boleto-card span { font-size: 13px; color: var(--text-muted); }
+.boleto-card strong { font-size: 22px; color: var(--primary); }
+.boleto-card small { font-size: 12px; color: var(--text-muted); }
+.boleto-card.alerta strong { color: #b91c1c; }
+.boleto-card.ok strong { color: #15803d; }
+
+.boleto-secao {
+font-size: 15px;
+margin: 20px 0 10px;
+color: var(--text-dark);
+}
+
+.boleto-selos { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+
+.boleto-selo {
+display: inline-flex;
+align-items: center;
+gap: 3px;
+font-size: 11px;
+color: var(--primary);
+background: var(--primary-light);
+border-radius: 999px;
+padding: 2px 8px;
+}
+
+.boleto-selo svg { width: 11px; height: 11px; }
+
+.boleto-prazo { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.boleto-vencido .boleto-prazo { color: #b91c1c; font-weight: 600; }
+.boleto-pago td { opacity: 0.75; }
+
+.boleto-acoes { display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex-wrap: nowrap; }
+.boleto-acoes .btn-add, .boleto-acoes .btn-filter { padding: 6px 12px; font-size: 13px; margin-right: 4px; white-space: nowrap; }
+
+.boleto-check {
+display: flex;
+gap: 10px;
+align-items: flex-start;
+font-size: 14px;
+margin: 4px 0 14px;
+cursor: pointer;
+}
+
+.boleto-check input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--primary); }
+
+.boleto-detalhes { margin-bottom: 18px; }
+.boleto-detalhes summary { cursor: pointer; color: var(--primary); font-size: 14px; margin-bottom: 12px; }

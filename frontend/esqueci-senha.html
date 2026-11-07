@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poupe+ | Esqueci minha senha</title>
+  <link rel="stylesheet" href="login.css">
+  <script src="api.js" defer></script>
+  <link rel="stylesheet" href="responsive.css">
+</head>
+<body class="auth-page">
+  <main class="login-container">
+    <section class="brand-section">
+      <div>
+        <h1 class="brand-logo">poupe<span>+</span></h1>
+        <p class="brand-headline">acontece com todo mundo.<br>vamos criar<br>uma nova senha.</p>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="form-header">
+        <h2>Esqueceu sua senha?</h2>
+        <p>Digite seu e-mail e enviaremos um link para criar uma nova.</p>
+      </div>
+
+      <form id="esqueciForm">
+        <div class="input-group">
+          <label for="email">E-mail</label>
+          <div class="input-wrapper">
+            <input type="email" id="email" placeholder="seu@email.com" autocomplete="email" required>
+          </div>
+        </div>
+        <p class="form-feedback" id="feedback" role="status" hidden></p>
+        <button type="submit" class="btn-submit" id="enviar">Enviar link</button>
+      </form>
+
+      <p class="signup-text">Lembrou a senha? <a href="login.html">Voltar para o login</a></p>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('esqueciForm');
+      const botao = document.getElementById('enviar');
+      const feedback = document.getElementById('feedback');
+
+      function mostrar(texto, erro) {
+        feedback.textContent = texto;
+        feedback.classList.toggle('erro', !!erro);
+        feedback.hidden = false;
+      }
+
+      form.addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+        botao.disabled = true;
+        try {
+          const resposta = await SenhaAPI.esqueci(document.getElementById('email').value.trim());
+          mostrar(resposta.mensagem, false);
+        } catch (erro) {
+          mostrar(erro.message, true);
+        } finally {
+          botao.disabled = false;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

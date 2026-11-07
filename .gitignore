@@ -12,3 +12,6 @@ env/
 
 # Testes ficam só na máquina local (não vão para o GitHub).
 /tests/
+
+# Guias passo a passo e o contexto do projeto ficam só na máquina local.
+/docs/

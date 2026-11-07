@@ -10,10 +10,13 @@
   <script src="api.js" defer></script>
 
 
+  <link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="tema-escuro.css">
+  <script src="responsive.js" defer></script>
 </head>
 
-<body>
-  <aside>
+<body class="app-page page-metas">
+  <aside class="app-sidebar">
     <div class="brand-wrapper">
     <div class="brand">poupe+</div>
     <i data-lucide="menu" class="menu-icon"></i>
@@ -26,10 +29,11 @@
     <li class="nav-item "><a href="caixa.html"><i data-lucide="landmark"></i>Caixa</a></li>
     <li class="nav-item"><a href="cofrinho.html"><i data-lucide="piggy-bank"></i>Cofrinho</a></li>
     <li class="nav-item"><a href="orcamento.html"><i data-lucide="pie-chart"></i>Orçamento</a></li>
-    <li class="nav-item"><a href="recorrencia.html"><i data-lucide="repeat"></i>Recorrência</a></li>
+    <li class="nav-item"><a href="boletos.html"><i data-lucide="receipt"></i>Boletos</a></li>
     <li class="nav-item"><a href="desperdicio.html"><i data-lucide="trending-down"></i>Desperdício</a></li>
     <li class="nav-item"><a href="score.html"><i data-lucide="award"></i>Score</a></li>
     <li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i>Relatórios</a></li>
+    <li class="nav-item"><a href="ia.html"><i data-lucide="sparkles"></i>IA Assistente</a></li>
     </ul>
     <ul class="nav-list nav-bottom">
     <li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i>Configurações</a></li>
@@ -40,7 +44,7 @@
     
 
   <!-- Conteúdo Principal -->
-  <main>
+  <main class="app-main">
     <div class="header">
       <h1>Minhas metas</h1>
 
@@ -60,7 +64,7 @@
 
     <div class="modal">
 
-      <h2>Criar nova meta</h2>
+      <h2 id="modalTitle">Criar nova meta</h2>
 
       <form id="goalForm" onsubmit="saveGoal(event)">
 
@@ -124,6 +128,7 @@
 
     const goalsGrid = document.getElementById('goalsGrid');
     const modal = document.getElementById('modal');
+    let editandoId = null;   // id_meta em edição; null = nova meta
 
     function pegarMetasCopia() {
       try {
@@ -159,7 +164,10 @@
         const card = document.createElement('div');
         card.className = 'goal-card';
         card.innerHTML = `
-          <button class="delete-btn" data-id="${textoHTML(goal.id)}" title="Excluir meta">
+          ${goal.origem === 'servidor' ? `<button class="edit-btn" data-id="${textoHTML(goal.id)}" title="Editar meta" aria-label="Editar meta">
+            <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
+          </button>` : ''}
+          <button class="delete-btn" data-id="${textoHTML(goal.id)}" title="Excluir meta" aria-label="Excluir meta">
             <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
           </button>
           <div class="card-top">
@@ -182,14 +190,32 @@
       goalsGrid.querySelectorAll('.delete-btn').forEach(botao => {
         botao.addEventListener('click', () => deleteGoal(botao.dataset.id));
       });
+      goalsGrid.querySelectorAll('.edit-btn').forEach(botao => {
+        botao.addEventListener('click', () => editGoal(botao.dataset.id));
+      });
       if (window.lucide) lucide.createIcons();
     }
 
     function openModal() {
+      editandoId = null;
+      document.getElementById('modalTitle').textContent = 'Criar nova meta';
+      if (modal) modal.classList.add('active');
+    }
+
+    // Edição: o mesmo formulário, preenchido; salvar faz PUT.
+    function editGoal(id) {
+      const meta = pegarMetasCopia().find(g => String(g.id) === String(id));
+      if (!meta || meta.origem !== 'servidor') return;
+      editandoId = meta.id_meta;
+      document.getElementById('modalTitle').textContent = 'Editar meta';
+      document.getElementById('goalTitle').value = meta.title;
+      document.getElementById('targetValue').value = meta.target;
+      document.getElementById('currentValue').value = meta.current;
       if (modal) modal.classList.add('active');
     }
 
     function closeModal() {
+      editandoId = null;
       if (modal) modal.classList.remove('active');
       const form = document.getElementById('goalForm');
       if (form) form.reset();
@@ -209,7 +235,9 @@
       const botao = document.querySelector('#goalForm button[type="submit"]');
       botao.disabled = true;
       try {
-        await MetaAPI.criar({ titulo, valor_alvo: alvo, valor_guardado: guardado });
+        const dados = { titulo, valor_alvo: alvo, valor_guardado: guardado };
+        if (editandoId) await MetaAPI.atualizar(editandoId, dados);
+        else await MetaAPI.criar(dados);
       } catch (erro) {
         alert(`Não foi possível salvar: ${erro.message}`);
         return;

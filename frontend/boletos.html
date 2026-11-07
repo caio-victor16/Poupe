@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poupe+ | Boletos</title>
+<link rel="stylesheet" href="gastos.css">
+<script src="vendor/lucide-1.69.0.min.js"></script>
+  <link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="tema-escuro.css">
+  <script src="responsive.js" defer></script>
+</head>
+<body class="app-page page-boletos">
+
+  <aside class="app-sidebar">
+    <div class="brand-wrapper">
+    <div class="brand">poupe+</div>
+    <i data-lucide="menu" class="menu-icon"></i>
+    </div>
+    <nav class="nav-container">
+    <ul class="nav-list">
+    <li class="nav-item"><a href="inicio.html"><i data-lucide="home"></i>Início</a></li>
+    <li class="nav-item"><a href="gastos.html"><i data-lucide="calendar"></i>Gastos</a></li>
+    <li class="nav-item"><a href="receitas.html"><i data-lucide="wallet"></i>Receitas</a></li>
+    <li class="nav-item "><a href="caixa.html"><i data-lucide="landmark"></i>Caixa</a></li>
+    <li class="nav-item"><a href="cofrinho.html"><i data-lucide="piggy-bank"></i>Cofrinho</a></li>
+    <li class="nav-item"><a href="orcamento.html"><i data-lucide="pie-chart"></i>Orçamento</a></li>
+    <li class="nav-item active"><a href="boletos.html"><i data-lucide="receipt"></i>Boletos</a></li>
+    <li class="nav-item"><a href="desperdicio.html"><i data-lucide="trending-down"></i>Desperdício</a></li>
+    <li class="nav-item"><a href="score.html"><i data-lucide="award"></i>Score</a></li>
+    <li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i>Relatórios</a></li>
+    <li class="nav-item"><a href="ia.html"><i data-lucide="sparkles"></i>IA Assistente</a></li>
+    </ul>
+    <ul class="nav-list nav-bottom">
+    <li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i>Configurações</a></li>
+    <li class="nav-item"><a href="login.html"><i data-lucide="log-out"></i>Sair</a></li>
+    </ul>
+    </nav>
+    </aside>
+
+<main class="app-main">
+<div id="listView">
+<div class="header">
+<h1>Boletos</h1>
+<button class="btn-add" id="btnNovo" type="button"><i data-lucide="plus"></i>Novo boleto</button>
+</div>
+
+<div class="boleto-resumo">
+  <div class="boleto-card"><span>A pagar este mês</span><strong id="totalAPagar">R$ 0,00</strong><small id="qtdAPagar"></small></div>
+  <div class="boleto-card alerta"><span>Vencidos</span><strong id="totalVencidos">R$ 0,00</strong><small id="qtdVencidos"></small></div>
+  <div class="boleto-card ok"><span>Pagos este mês</span><strong id="totalPagos">R$ 0,00</strong><small id="qtdPagos"></small></div>
+</div>
+
+<div id="boletosList"></div>
+</div>
+
+<div id="formView" class="hidden">
+<div class="form-header">
+<button type="button" class="btn-back" id="btnVoltar"><i data-lucide="arrow-left"></i>Voltar</button>
+<h1 id="formTitulo">Novo boleto</h1>
+</div>
+<div class="form-card">
+<form id="formBoleto">
+<div class="form-group">
+<label for="bolDescricao">Descrição</label>
+<input type="text" id="bolDescricao" maxlength="100" placeholder="Ex: Internet, Aluguel, Cartão de crédito" required>
+</div>
+<div class="form-group">
+<label for="bolCategoria">Categoria (o gasto entra nela ao pagar)</label>
+<div class="select-wrapper">
+<select id="bolCategoria" required></select>
+<i data-lucide="chevron-down" class="select-icon"></i>
+</div>
+</div>
+<div class="form-group">
+<label for="bolValor">Valor (R$)</label>
+<input type="text" inputmode="decimal" id="bolValor" placeholder="0,00" required>
+</div>
+<div class="form-group">
+<label for="bolVencimento">Vencimento</label>
+<input type="date" id="bolVencimento" required>
+</div>
+<label class="boleto-check"><input type="checkbox" id="bolFixo"> <span><b>Repete todo mês</b> (aluguel, internet, academia…). Ao pagar, o do mês seguinte é criado.</span></label>
+<label class="boleto-check"><input type="checkbox" id="bolDebito"> <span><b>Débito automático</b>: o pagamento é lançado sozinho em Gastos no dia do vencimento.</span></label>
+<details class="boleto-detalhes">
+<summary>+ mais detalhes</summary>
+<div class="form-group">
+<label for="bolCodigo">Código de barras / linha digitável (opcional)</label>
+<input type="text" inputmode="numeric" id="bolCodigo" placeholder="Para copiar na hora de pagar no app do banco">
+</div>
+</details>
+<button type="submit" class="btn-submit-large" id="bolSalvar">Salvar boleto</button>
+</form>
+</div>
+</div>
+</main>
+
+<script src="api.js"></script>
+<script>
+// Boletos ficam no servidor (tabela boleto). "Paguei" lança o gasto em Gastos;
+// boleto fixo cria o do mês seguinte; débito automático paga sozinho no vencimento
+// (BoletoAPI.processar, chamado ao abrir as telas).
+const dinheiro = v => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const dataBR = iso => iso ? iso.split("-").reverse().join("/") : "";
+const dois = n => String(n).padStart(2, "0");
+function hojeISO(d = new Date()) { return `${d.getFullYear()}-${dois(d.getMonth() + 1)}-${dois(d.getDate())}`; }
+function numero(texto) { return Number(String(texto).trim().replace(/\./g, "").replace(",", ".")); }
+
+function prazo(b) {
+  if (b.situacao === "pago") return `pago em ${dataBR(b.data_pagamento)}`;
+  const d = b.dias_para_vencer;
+  if (d < 0) return `venceu há ${-d} dia${d === -1 ? "" : "s"}`;
+  if (d === 0) return "vence hoje";
+  if (d === 1) return "vence amanhã";
+  return `vence em ${d} dias`;
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  lucide.createIcons();
+  const usuarioId = Sessao.exigirLogin();
+  if (!usuarioId) return;
+
+  const listView = document.getElementById("listView");
+  const formView = document.getElementById("formView");
+  const form = document.getElementById("formBoleto");
+  const lista = document.getElementById("boletosList");
+  const campos = {
+    descricao: document.getElementById("bolDescricao"), categoria: document.getElementById("bolCategoria"),
+    valor: document.getElementById("bolValor"), vencimento: document.getElementById("bolVencimento"),
+    fixo: document.getElementById("bolFixo"), debito: document.getElementById("bolDebito"),
+    codigo: document.getElementById("bolCodigo"),
+  };
+  let boletos = [];
+  let nomesCategoria = {};
+  let editandoId = null;
+
+  try {
+    const categorias = await CategoriaAPI.listar();
+    categorias.forEach(c => { nomesCategoria[c.id_categoria] = c.nome; });
+    campos.categoria.innerHTML = categorias
+      .map(c => `<option value="${textoHTML(c.id_categoria)}">${textoHTML(c.nome)}</option>`).join("");
+  } catch (erro) {
+    alert(`Não foi possível carregar as categorias: ${erro.message}`);
+  }
+
+  function abrirFormulario(b) {
+    editandoId = b ? b.id_boleto : null;
+    form.reset();
+    document.getElementById("formTitulo").textContent = b ? "Editar boleto" : "Novo boleto";
+    campos.vencimento.value = hojeISO();
+    if (b) {
+      campos.descricao.value = b.descricao;
+      if (b.id_categoria) campos.categoria.value = b.id_categoria;
+      campos.valor.value = String(b.valor).replace(".", ",");
+      campos.vencimento.value = b.vencimento;
+      campos.fixo.checked = b.fixo;
+      campos.debito.checked = b.debito_automatico;
+      campos.codigo.value = b.codigo_barras || "";
+      document.querySelector(".boleto-detalhes").open = !!b.codigo_barras;
+    }
+    listView.classList.add("hidden");
+    formView.classList.remove("hidden");
+    campos.descricao.focus();
+  }
+  function fecharFormulario() {
+    editandoId = null;
+    formView.classList.add("hidden");
+    listView.classList.remove("hidden");
+  }
+  document.getElementById("btnNovo").addEventListener("click", () => abrirFormulario(null));
+  document.getElementById("btnVoltar").addEventListener("click", fecharFormulario);
+
+  async function carregar() {
+    try {
+      boletos = await BoletoAPI.listarPorUsuario(usuarioId);
+    } catch (erro) {
+      lista.innerHTML = `<div class="empty-msg"><p>Não foi possível carregar os boletos.</p><small>${textoHTML(erro.message)}</small></div>`;
+      return;
+    }
+    renderizar();
+  }
+
+  function linha(b) {
+    const nome = b.descricao || "Boleto sem nome";
+    const selos = [
+      b.fixo ? '<span class="boleto-selo"><i data-lucide="repeat"></i>todo mês</span>' : "",
+      b.debito_automatico ? '<span class="boleto-selo"><i data-lucide="zap"></i>débito automático</span>' : "",
+    ].join("");
+    const pago = b.situacao === "pago";
+    const acaoPrincipal = pago
+      ? `<button class="btn-filter" data-acao="desfazer" data-id="${textoHTML(b.id_boleto)}" type="button" title="Voltar para pendente e apagar o gasto lançado"><i data-lucide="undo-2"></i>Desfazer</button>`
+      : `<button class="btn-add boleto-pagar" data-acao="pagar" data-id="${textoHTML(b.id_boleto)}" type="button"><i data-lucide="check"></i>Paguei</button>`;
+    return `<tr class="boleto-${textoHTML(b.situacao)}">
+      <td><span class="font-medium">${textoHTML(nome)}</span><div class="boleto-selos">${selos}</div></td>
+      <td><span class="cat-badge">${textoHTML(nomesCategoria[b.id_categoria] || "sem categoria")}</span></td>
+      <td>${textoHTML(dataBR(b.vencimento))}<div class="boleto-prazo">${textoHTML(prazo(b))}</div></td>
+      <td class="text-right font-bold">${dinheiro(b.valor)}</td>
+      <td class="text-right"><div class="boleto-acoes">
+        ${acaoPrincipal}
+        ${b.codigo_barras ? `<button class="edit-btn" data-acao="copiar" data-id="${textoHTML(b.id_boleto)}" type="button" title="Copiar código de barras" aria-label="Copiar código de barras"><i data-lucide="copy"></i></button>` : ""}
+        <button class="edit-btn" data-acao="editar" data-id="${textoHTML(b.id_boleto)}" type="button" title="Editar" aria-label="Editar"><i data-lucide="pencil"></i></button>
+        <button class="delete-btn" data-acao="excluir" data-id="${textoHTML(b.id_boleto)}" type="button" title="Excluir" aria-label="Excluir"><i data-lucide="trash-2"></i></button>
+      </div></td>
+    </tr>`;
+  }
+
+  function tabela(titulo, itens) {
+    if (!itens.length) return "";
+    return `<h2 class="boleto-secao">${textoHTML(titulo)}</h2>
+      <div class="table-card"><table class="expenses-table">
+      <thead><tr><th>Boleto</th><th>Categoria</th><th>Vencimento</th><th class="text-right">Valor</th><th></th></tr></thead>
+      <tbody>${itens.map(linha).join("")}</tbody></table></div>`;
+  }
+
+  function renderizar() {
+    const hoje = hojeISO();
+    const mes = hoje.slice(0, 7);
+    const vencidos = boletos.filter(b => b.situacao === "vencido");
+    const aVencer = boletos.filter(b => b.situacao === "pendente");
+    const pagos = boletos.filter(b => b.situacao === "pago")
+      .sort((a, b) => String(b.data_pagamento).localeCompare(String(a.data_pagamento)));
+    const soma = l => l.reduce((t, b) => t + Number(b.valor), 0);
+    const aPagarMes = [...vencidos, ...aVencer.filter(b => b.vencimento.slice(0, 7) <= mes)];
+    const pagosMes = pagos.filter(b => String(b.data_pagamento).startsWith(mes));
+    const qtd = (n, s, p) => `${n} ${n === 1 ? s : p}`;
+    document.getElementById("totalAPagar").textContent = dinheiro(soma(aPagarMes));
+    document.getElementById("qtdAPagar").textContent = qtd(aPagarMes.length, "boleto", "boletos");
+    document.getElementById("totalVencidos").textContent = dinheiro(soma(vencidos));
+    document.getElementById("qtdVencidos").textContent = qtd(vencidos.length, "boleto", "boletos");
+    document.getElementById("totalPagos").textContent = dinheiro(soma(pagosMes));
+    document.getElementById("qtdPagos").textContent = qtd(pagosMes.length, "boleto", "boletos");
+
+    if (!boletos.length) {
+      lista.innerHTML = `<div class="empty-msg"><i data-lucide="receipt"></i><p>Nenhum boleto cadastrado.</p>
+        <small>Cadastre as contas que você paga (aluguel, internet, cartão…). Marque "Repete todo mês" nas fixas.</small></div>`;
+    } else {
+      lista.innerHTML = tabela("Vencidos", vencidos) + tabela("A vencer", aVencer)
+        + tabela("Pagos", pagos.slice(0, 20));
+    }
+    lucide.createIcons();
+  }
+
+  lista.addEventListener("click", async evento => {
+    const botao = evento.target.closest("button[data-acao]");
+    if (!botao) return;
+    const b = boletos.find(x => String(x.id_boleto) === botao.dataset.id);
+    if (!b) return;
+    const rotulo = b.descricao || "boleto";   // texto de confirm/alert (não é HTML)
+    try {
+      if (botao.dataset.acao === "editar") return abrirFormulario(b);
+      if (botao.dataset.acao === "copiar") {
+        await navigator.clipboard.writeText(b.codigo_barras);
+        alert("Código copiado. Cole no app do seu banco para pagar.");
+        return;
+      }
+      if (botao.dataset.acao === "pagar") {
+        if (!b.id_categoria) {
+          alert("Escolha uma categoria para este boleto antes de pagar.");
+          return abrirFormulario(b);
+        }
+        if (!confirm(`Marcar "${rotulo}" como pago hoje?\nO gasto de ${dinheiro(b.valor)} será lançado em Gastos.`)) return;
+        botao.disabled = true;
+        const r = await BoletoAPI.pagar(b.id_boleto);
+        if (r.proximo) alert(`Pago! O boleto de ${dataBR(r.proximo.vencimento)} já foi criado.`);
+      } else if (botao.dataset.acao === "desfazer") {
+        if (!confirm(`Desfazer o pagamento de "${rotulo}"?\nO gasto lançado será apagado${b.fixo ? " e o boleto do mês seguinte também, se ainda não foi pago" : ""}.`)) return;
+        await BoletoAPI.desfazerPagamento(b.id_boleto);
+      } else if (botao.dataset.acao === "excluir") {
+        if (!confirm(`Excluir o boleto "${rotulo}"?${b.situacao === "pago" ? "\nO gasto já lançado continua em Gastos." : ""}`)) return;
+        await BoletoAPI.excluir(b.id_boleto);
+      }
+    } catch (erro) {
+      alert(erro.message);
+      botao.disabled = false;
+      return;
+    }
+    await carregar();
+  });
+
+  form.addEventListener("submit", async evento => {
+    evento.preventDefault();
+    const dados = {
+      descricao: campos.descricao.value.trim(),
+      id_categoria: Number(campos.categoria.value),
+      valor: numero(campos.valor.value),
+      vencimento: campos.vencimento.value,
+      fixo: campos.fixo.checked,
+      debito_automatico: campos.debito.checked,
+      codigo_barras: campos.codigo.value.trim(),
+    };
+    if (!dados.descricao || !(dados.valor > 0) || !dados.vencimento || !dados.id_categoria) {
+      alert("Preencha descrição, categoria, vencimento e um valor maior que zero.");
+      return;
+    }
+    const botao = document.getElementById("bolSalvar");
+    botao.disabled = true;
+    try {
+      if (editandoId) await BoletoAPI.atualizar(editandoId, dados);
+      else await BoletoAPI.criar(dados);
+    } catch (erro) {
+      alert(`Não foi possível salvar: ${erro.message}`);
+      return;
+    } finally {
+      botao.disabled = false;
+    }
+    fecharFormulario();
+    // Boleto com débito automático já vencido é lançado na hora.
+    try { await BoletoAPI.processar(usuarioId); } catch (erro) { console.error(erro); }
+    await carregar();
+  });
+
+  try { await BoletoAPI.processar(usuarioId); } catch (erro) { console.error("Boletos:", erro); }
+  await carregar();
+});
+</script>
+</body>
+</html>

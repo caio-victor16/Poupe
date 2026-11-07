@@ -14,7 +14,7 @@ from backend.models.cofrinho import Cofrinho
 from backend.models.receita_recorrente import ReceitaRecorrente
 from backend.seguranca import sessao_valida
 
-PUBLICOS = {"usuario.login", "usuario.cadastrar_usuario"}
+PUBLICOS = {"usuario.login", "usuario.cadastrar_usuario", "senha.esqueci", "senha.redefinir"}
 CRIACAO = {"gasto.criar", "boleto.criar", "alerta.criar",
            "orcamento.definir", "recorrencia_gasto.criar", "receita.criar",
            "conta.criar", "meta.criar", "cofrinho_meta.criar", "receita_recorrente.criar"}

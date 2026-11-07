@@ -3,7 +3,29 @@ import sqlite3
 from flask import Blueprint, jsonify, request, session, current_app
 from backend.services.ia_limite import reservar_chamada
 
+from backend.services.ia_contexto import montar_contexto
 from backend.services.ia_service import ErroIA, GeminiService
+
+MAX_HISTORICO = 10        # mensagens anteriores enviadas junto (5 trocas)
+MAX_HISTORICO_CHARS = 8000
+
+
+def validar_historico(valor):
+    """Lista [{papel: 'usuario'|'ia', texto}] vinda do navegador → só as últimas, com limite."""
+    if valor is None:
+        return []
+    if not isinstance(valor, list):
+        raise ValueError("O campo 'historico' deve ser uma lista.")
+    limpo = []
+    for item in valor[-MAX_HISTORICO:]:
+        if (not isinstance(item, dict) or item.get("papel") not in ("usuario", "ia")
+                or not isinstance(item.get("texto"), str) or not item["texto"].strip()):
+            raise ValueError("Histórico da conversa inválido.")
+        limpo.append({"papel": item["papel"], "texto": item["texto"].strip()[:4000]})
+    # Corta as mais antigas até caber; a conversa precisa começar pelo usuário.
+    while limpo and (sum(len(h["texto"]) for h in limpo) > MAX_HISTORICO_CHARS or limpo[0]["papel"] != "usuario"):
+        limpo.pop(0)
+    return limpo
 
 
 class IaController:
@@ -30,6 +52,15 @@ class IaController:
         if len(mensagem) > 2000:
             return jsonify({"erro": "A mensagem deve possuir no máximo 2000 caracteres."}), 400
 
+        try:
+            historico = validar_historico(dados.get("historico"))
+        except ValueError as erro:
+            return jsonify({"erro": str(erro)}), 400
+
+        # REV-006: sem chave, avisa sem gastar a cota do usuário.
+        if not self.service.configurada:
+            return jsonify({"erro": "A IA não está configurada no servidor."}), 503
+
         config = current_app.config
         limites = [
             ("minuto", 60, config["IA_LIMITE_MINUTO"], False),
@@ -49,7 +80,8 @@ class IaController:
                             "tentar_em_segundos": espera}), 429, {"Retry-After": str(espera)}
 
         try:
-            resposta = self.service.gerar_resposta(mensagem)
+            contexto = montar_contexto(session["usuario_id"])
+            resposta = self.service.gerar_resposta(mensagem, contexto, historico)
             return jsonify({"resposta": resposta}), 200
         except ErroIA as erro:
             return jsonify({"erro": str(erro)}), 502

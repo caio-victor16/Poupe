@@ -6,10 +6,13 @@
 <title>Poupe+ | Score de Saúde Financeira</title>
 <link rel="stylesheet" href="gastos.css">
 <script src="vendor/lucide-1.69.0.min.js"></script>
+  <link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="tema-escuro.css">
+  <script src="responsive.js" defer></script>
 </head>
-<body>
+<body class="app-page page-score">
 
-  <aside>
+  <aside class="app-sidebar">
     <div class="brand-wrapper">
     <div class="brand">poupe+</div>
     <i data-lucide="menu" class="menu-icon"></i>
@@ -22,10 +25,11 @@
     <li class="nav-item "><a href="caixa.html"><i data-lucide="landmark"></i>Caixa</a></li>
     <li class="nav-item"><a href="cofrinho.html"><i data-lucide="piggy-bank"></i>Cofrinho</a></li>
     <li class="nav-item"><a href="orcamento.html"><i data-lucide="pie-chart"></i>Orçamento</a></li>
-    <li class="nav-item"><a href="recorrencia.html"><i data-lucide="repeat"></i>Recorrência</a></li>
+    <li class="nav-item"><a href="boletos.html"><i data-lucide="receipt"></i>Boletos</a></li>
     <li class="nav-item"><a href="desperdicio.html"><i data-lucide="trending-down"></i>Desperdício</a></li>
     <li class="nav-item active"><a href="score.html"><i data-lucide="award"></i>Score</a></li>
     <li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i>Relatórios</a></li>
+    <li class="nav-item"><a href="ia.html"><i data-lucide="sparkles"></i>IA Assistente</a></li>
     </ul>
     <ul class="nav-list nav-bottom">
     <li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i>Configurações</a></li>
@@ -34,7 +38,7 @@
     </nav>
     </aside>
     
-<main>
+<main class="app-main">
 <div class="header">
 <h1>Score de Saúde Financeira</h1>
 </div>
@@ -63,7 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const receitas = JSON.parse(localStorage.getItem(chaveUsuario("poupePlus_incomes")) || "[]")
   .map(r => ({ valor: r.amount }));
   const orcamentos = JSON.parse(localStorage.getItem(chaveUsuario("poupe_orcamentos")) || "[]");
-  const recorrencias = JSON.parse(localStorage.getItem(chaveUsuario("poupe_recorrencias")) || "[]");
+  const boletos = JSON.parse(localStorage.getItem(chaveUsuario("poupe_boletos")) || "[]");
 
   let pontos = 100;
   let diagnosticos = [];
@@ -112,12 +116,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // 3. Boletos Pेंडentes/Atrasados
-  const diaAtual = new Date().getDate();
-  const contasAtrasadas = recorrencias.filter(r => r.tipo === "Gasto Fixo" && Number(r.dia) < diaAtual);
+  // Boletos vencidos e não pagos (aba Boletos). Antes: todo gasto fixo com dia
+  // anterior a hoje contava como atrasado, mesmo já pago.
+  const contasAtrasadas = boletos.filter(b => b.situacao === "vencido");
 
   if (contasAtrasadas.length > 0) {
     pontos -= (contasAtrasadas.length * 10);
-    diagnosticos.push(`❌ <b>Boletos pendentes/atrasados:</b> Identificamos ${contasAtrasadas.length} contas com vencimento anterior a hoje.`);
+    diagnosticos.push(`❌ <b>Boletos pendentes/atrasados:</b> Identificamos ${contasAtrasadas.length} boleto(s) vencido(s) e não pago(s).`);
   } else {
     diagnosticos.push("✅ <b>Contas em dia:</b> Nenhuma pendência identificada até a data atual.");
   }

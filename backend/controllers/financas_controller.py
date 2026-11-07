@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from flask import jsonify, request
 
-from backend.crud import CrudSimples, dinheiro, escolha, inteiro, texto, validar_campos
+from backend.crud import CrudSimples, data_iso, dinheiro, escolha, inteiro, texto, validar_campos
 from backend.extensions import db
 from backend.models.cofrinho import Cofrinho
 from backend.models.conta import Conta
@@ -80,8 +80,11 @@ CAMPOS_RECEITA_RECORRENTE = {
 def _criar_receita_recorrente():
     dados = request.get_json(silent=True)
     limpos = validar_campos(CAMPOS_RECEITA_RECORRENTE, dados)
+    # "proxima_data" opcional: a tela de Receitas cria a receita deste mês e a
+    # repetição a partir do mês seguinte (sem gerar a deste mês em dobro).
+    inicio = validar_campos({"proxima_data": data_iso}, dados, parcial=True).get("proxima_data")
     registro = ReceitaRecorrente(id_usuario=int(dados["id_usuario"]), ativa=True,
-                                 proxima_data=_primeira_data(limpos["dia_mes"], date.today()),
+                                 proxima_data=inicio or _primeira_data(limpos["dia_mes"], date.today()),
                                  **limpos)
     db.session.add(registro)
     db.session.commit()

@@ -10,6 +10,11 @@ from backend import seguranca
 class SenhaAtualIncorreta(ValueError):
     pass
 
+
+# REV-004: com e-mail inexistente, confere a senha contra este hash para o
+# login levar o mesmo tempo (senão o tempo revela quais e-mails existem).
+HASH_FALSO = gerar_hash("poupe-usuario-inexistente")
+
 # Item 12: renda pode ser zero (antes "0" era tratado como campo ausente);
 # limite precisa ser maior que zero (com limite 0 todo gasto estoura o limite).
 CAMPOS_USUARIO = {
@@ -91,7 +96,10 @@ class UsuarioService:
 
     def autenticar(self, email, senha):
         usuario = Usuario.buscar_por_email(email)
-        if usuario is None or not conferir_senha(usuario.senha, senha):
+        if usuario is None:
+            conferir_senha(HASH_FALSO, senha)
+            return None
+        if not conferir_senha(usuario.senha, senha):
             return None
         if not senha_tem_hash(usuario.senha):
             usuario.senha = gerar_hash(senha)

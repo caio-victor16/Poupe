@@ -2,12 +2,18 @@ import calendar
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
+from backend.crud import id_existente
 from backend.extensions import db
+from backend.models.categoria import Categoria
 from backend.models.gasto import Gasto
 from backend.models.recorrencia_gasto import RecorrenciaGasto
 from backend.repositories.recorrencia_gasto_repository import (
     RecorrenciaGastoRepository,
 )
+
+
+# REV-007: categoria inexistente → 400 com mensagem (antes: erro do banco → 500).
+CATEGORIA = id_existente(Categoria, "categoria")
 
 
 class RecorrenciaGastoService:
@@ -83,7 +89,7 @@ class RecorrenciaGastoService:
         proxima_data = self._parse_data(dados["proxima_data"], "proxima_data")
         recorrencia = RecorrenciaGasto(
             id_usuario=int(dados["id_usuario"]),
-            id_categoria=int(dados["id_categoria"]),
+            id_categoria=CATEGORIA(dados["id_categoria"], "id_categoria"),
             valor=self._parse_valor(dados["valor"]),
             descricao=dados.get("descricao"),
             frequencia=frequencia,
@@ -103,7 +109,7 @@ class RecorrenciaGastoService:
             return None
 
         if "id_categoria" in dados:
-            recorrencia.id_categoria = int(dados["id_categoria"])
+            recorrencia.id_categoria = CATEGORIA(dados["id_categoria"], "id_categoria")
         if "valor" in dados:
             recorrencia.valor = self._parse_valor(dados["valor"])
         if "descricao" in dados:

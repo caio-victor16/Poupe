@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poupe+ | Nova senha</title>
+  <link rel="stylesheet" href="login.css">
+  <script src="api.js" defer></script>
+  <link rel="stylesheet" href="responsive.css">
+</head>
+<body class="auth-page">
+  <main class="login-container">
+    <section class="brand-section">
+      <div>
+        <h1 class="brand-logo">poupe<span>+</span></h1>
+        <p class="brand-headline">quase lá!<br>escolha uma<br>senha nova.</p>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <div class="form-header">
+        <h2>Criar nova senha</h2>
+        <p>Depois de salvar, entre com a senha nova.</p>
+      </div>
+
+      <form id="redefinirForm">
+        <div class="input-group">
+          <label for="password">Nova senha</label>
+          <div class="input-wrapper">
+            <input type="password" id="password" autocomplete="new-password" minlength="4" required>
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="confirm">Confirme a nova senha</label>
+          <div class="input-wrapper">
+            <input type="password" id="confirm" autocomplete="new-password" minlength="4" required>
+          </div>
+        </div>
+        <p class="form-feedback" id="feedback" role="status" hidden></p>
+        <button type="submit" class="btn-submit" id="salvar">Salvar nova senha</button>
+      </form>
+
+      <p class="signup-text"><a href="esqueci-senha.html">Pedir um novo link</a> · <a href="login.html">Voltar para o login</a></p>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // O token vem depois do "#" (não vai para o servidor nem para o histórico de logs).
+      const token = new URLSearchParams(window.location.hash.slice(1)).get('token') || '';
+      history.replaceState(null, '', window.location.pathname);   // tira o token da barra
+      const form = document.getElementById('redefinirForm');
+      const botao = document.getElementById('salvar');
+      const feedback = document.getElementById('feedback');
+
+      function mostrar(texto, erro) {
+        feedback.textContent = texto;
+        feedback.classList.toggle('erro', !!erro);
+        feedback.hidden = false;
+      }
+
+      if (!token) {
+        mostrar('Link incompleto. Abra o link do e-mail de novo ou peça um novo.', true);
+        botao.disabled = true;
+      }
+
+      form.addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+        const senha = document.getElementById('password').value;
+        if (senha !== document.getElementById('confirm').value) {
+          mostrar('As senhas não conferem.', true);
+          return;
+        }
+        botao.disabled = true;
+        try {
+          const resposta = await SenhaAPI.redefinir(token, senha);
+          mostrar(resposta.mensagem + ' Indo para o login…', false);
+          setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+        } catch (erro) {
+          mostrar(erro.message, true);
+          botao.disabled = false;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

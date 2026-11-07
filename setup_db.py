@@ -18,7 +18,8 @@ Regras de segurança:
   não altera nada e explica o que fazer.
 - --reset só apaga o banco configurado, e só com --confirmar igual ao nome dele.
 - --atualizar só roda em banco que já tem tabelas do Poupe+: cria as tabelas
-  que faltam (as existentes não são tocadas) e recria as procedures.
+  que faltam, acrescenta as colunas novas listadas em COLUNAS_NOVAS (sem apagar
+  nada) e recria as procedures.
 - --atualizar-procedures só roda em banco com todas as tabelas do Poupe+ e
   só recria procedures; não altera tabelas nem dados.
 """
@@ -99,6 +100,60 @@ def preparar_comandos(caminho=SQL_FILE):
     return comandos
 
 
+# Colunas acrescentadas depois em tabelas que já existiam (o CREATE TABLE do
+# poupe.sql já as tem; isto é só para bancos de versões anteriores).
+# (tabela, coluna, comando que acrescenta)
+COLUNAS_NOVAS = [
+    ("boleto", "descricao", "ALTER TABLE boleto ADD COLUMN descricao varchar(100) NOT NULL DEFAULT ''"),
+    ("boleto", "id_categoria", "ALTER TABLE boleto ADD COLUMN id_categoria int NULL, "
+     "ADD CONSTRAINT fk_boleto_categoria FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria)"),
+    ("boleto", "fixo", "ALTER TABLE boleto ADD COLUMN fixo boolean NOT NULL DEFAULT false"),
+    ("boleto", "debito_automatico",
+     "ALTER TABLE boleto ADD COLUMN debito_automatico boolean NOT NULL DEFAULT false"),
+    ("boleto", "dia_vencimento", "ALTER TABLE boleto ADD COLUMN dia_vencimento int NULL"),
+    ("boleto", "data_pagamento", "ALTER TABLE boleto ADD COLUMN data_pagamento date NULL"),
+    ("boleto", "id_gasto", "ALTER TABLE boleto ADD COLUMN id_gasto int NULL, "
+     "ADD CONSTRAINT fk_boleto_gasto FOREIGN KEY (id_gasto) REFERENCES gasto(id_gasto) ON DELETE SET NULL"),
+]
+# Colunas que deixaram de ser obrigatórias: (tabela, coluna, comando).
+COLUNAS_OPCIONAIS = [
+    ("boleto", "codigo_barras", "ALTER TABLE boleto MODIFY codigo_barras varchar(100) NULL"),
+]
+# Ao ganhar as colunas novas, os gastos fixos (recorrências mensais ativas) viram
+# boletos fixos com débito automático, mantendo o comportamento de antes
+# (lançar o gasto sozinho no vencimento). A recorrência antiga é desativada.
+CONVERTER_RECORRENCIAS = [
+    """INSERT INTO boleto (id_usuario, descricao, id_categoria, codigo_barras, valor, vencimento,
+                          status, fixo, debito_automatico, dia_vencimento)
+       SELECT r.id_usuario, LEFT(COALESCE(NULLIF(TRIM(r.descricao), ''), c.nome), 100),
+              r.id_categoria, NULL, r.valor, r.proxima_data, 'pendente', true, true, r.dia_mes
+       FROM recorrencia_gasto r JOIN categoria c ON c.id_categoria = r.id_categoria
+       WHERE r.ativa = true AND r.frequencia = 'mensal'""",
+    "UPDATE recorrencia_gasto SET ativa = false WHERE ativa = true AND frequencia = 'mensal'",
+]
+
+
+def migracoes_pendentes(conn, nome, existentes):
+    """[(rótulo, comando)] das colunas novas/opcionais ainda não aplicadas, só
+    em tabelas que já existem (tabela criada agora já vem completa)."""
+    tabelas = {t for t, _, _ in COLUNAS_NOVAS + COLUNAS_OPCIONAIS} & existentes
+    if not tabelas:
+        return []
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT table_name, column_name, is_nullable FROM information_schema.columns "
+            "WHERE table_schema = %s AND table_name IN ("
+            + ", ".join(["%s"] * len(tabelas)) + ")",
+            (nome, *sorted(tabelas)),
+        )
+        colunas = {(t.lower(), c.lower()): n for t, c, n in cur.fetchall()}
+    pendentes = [(f"{t}.{c}", sql) for t, c, sql in COLUNAS_NOVAS
+                 if t in tabelas and (t, c) not in colunas]
+    pendentes += [(f"{t}.{c} (opcional)", sql) for t, c, sql in COLUNAS_OPCIONAIS
+                  if t in tabelas and colunas.get((t, c), "YES") == "NO"]
+    return pendentes
+
+
 def objetos_esperados(comandos):
     tabelas, procedures = set(), set()
     for comando in comandos:
@@ -142,6 +197,7 @@ def estado_banco(conn, nome, tabelas, procedures):
     if not existentes and not rotinas:
         return "vazio", set()
     faltando = (tabelas - existentes) | (procedures - rotinas)
+    faltando |= {rotulo for rotulo, _ in migracoes_pendentes(conn, nome, existentes & tabelas)}
     if not faltando:
         return "completo", set()
     if not (existentes & tabelas):
@@ -257,6 +313,30 @@ def _recriar_procedures(conn, criacoes):
                 ) from erro
 
 
+def _aplicar_migracoes(conn, nome, existentes):
+    """Acrescenta colunas novas; se o boleto ganhou as colunas agora, converte as
+    recorrências mensais em boletos fixos. Retorna a lista do que foi feito."""
+    feitas = []
+    pendentes = migracoes_pendentes(conn, nome, existentes)
+    with conn.cursor() as cur:
+        try:
+            for rotulo, comando in pendentes:
+                cur.execute(comando)
+                feitas.append(rotulo)
+            if "boleto.fixo" in feitas and "recorrencia_gasto" in existentes:
+                cur.execute(CONVERTER_RECORRENCIAS[0])
+                convertidas = cur.rowcount
+                cur.execute(CONVERTER_RECORRENCIAS[1])
+                feitas.append(f"{convertidas} gasto(s) fixo(s) convertido(s) em boletos fixos")
+        except pymysql.MySQLError as erro:
+            raise ErroInstalacao(
+                f"Falha ao atualizar colunas (erro {erro.args[0] if erro.args else '?'}). "
+                f"Já aplicado: {', '.join(feitas) or 'nada'}. Dados não foram apagados; "
+                "corrija e rode --atualizar de novo (ele continua de onde parou)."
+            ) from erro
+    return feitas
+
+
 def atualizar_banco():
     """Atualiza um banco do Poupe+ de versão anterior sem apagar dados.
 
@@ -298,6 +378,7 @@ def atualizar_banco():
                             f"existentes não foram alteradas. Criadas até aqui: "
                             f"{', '.join(criadas) or 'nenhuma'}."
                         ) from erro
+            criadas += _aplicar_migracoes(conn, nome, existentes)
             _recriar_procedures(conn, criacoes)
             return criadas, len(criacoes)
     finally:
@@ -353,8 +434,8 @@ def main(argv=None):
         except ErroInstalacao as erro:
             print(f"Erro: {erro}", file=sys.stderr)
             return 1
-        novas = ", ".join(criadas) if criadas else "nenhuma (já estavam todas)"
-        print(f"Banco '{DATABASE}' atualizado. Tabelas criadas: {novas}. "
+        novas = ", ".join(criadas) if criadas else "nada (já estava tudo)"
+        print(f"Banco '{DATABASE}' atualizado. Criado/alterado: {novas}. "
               f"Procedures recriadas: {quantidade}. Dados intactos.")
         return 0
     if args.atualizar_procedures:

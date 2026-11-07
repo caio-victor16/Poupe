@@ -1,0 +1,111 @@
+/* Layout compartilhado. Carregado depois dos estilos específicos de cada tela. */
+body.app-page { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
+body.app-page.page-ia { display: block; }
+.page-ia > .layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); }
+.app-page .app-sidebar { display: flex; position: sticky; top: 0; align-self: start; width: 240px; min-width: 0; height: 100vh; height: 100dvh; min-height: 0; overflow-y: auto; padding: 24px 16px; }
+.app-page .app-main { width: 100%; max-width: 1440px; min-width: 0; margin-inline: auto; padding: clamp(24px, 3vw, 48px); }
+.page-alertas .app-main { max-width: 1120px; }
+.page-ia .app-main { height: 100%; min-height: 0; padding: 0; max-width: none; }
+.app-page .nav-list { display: flex; flex-direction: column; gap: 8px; }
+.app-page .nav-container { display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
+.app-page .brand-wrapper { margin-bottom: 32px; }
+.app-page .nav-item a { padding: 12px 16px; font-size: 15px; }
+.app-page .nav-bottom { margin-top: auto; padding-top: 24px; }
+.navigation-toggle { display: none; }
+.app-main > *, .app-main :is(.grid-left, .grid-right, .metric, .stat-card, .settings-column, .chart-card, .form-group, .alert-content, .expense-info) { min-width: 0; }
+.app-main :is(h1, h2, h3, p, strong, .stat-value, .goal-title) { overflow-wrap: anywhere; }
+.app-main :is(.header, .page-header, .top-bar, .form-header, .card-header-flex) { gap: 16px; flex-wrap: wrap; }
+.app-main .header-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.app-main .user-actions { flex-shrink: 0; margin-left: auto; }
+.app-main .dashboard-grid { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+.app-main .summary-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.app-main .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.app-main .charts-grid, .app-main .settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.app-main .goals-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+.app-main .donut-chart-wrapper { flex-wrap: wrap; justify-content: center; }
+.app-main .canvas-container { flex: 0 0 150px; }
+.app-main canvas { max-width: 100%; }
+.app-main .chart-legend { min-width: min(100%, 180px); }
+.app-main .expense-item { gap: 12px; }
+.app-main .expense-left { min-width: 0; }
+.app-main .icon-box { flex-shrink: 0; }
+.app-main .expense-amount { flex-shrink: 0; text-align: right; }
+.app-main .form-card { width: 100%; max-width: 680px; margin-inline: auto; }
+.app-main .form-header { max-width: 680px; margin-inline: auto; }
+.app-main :is(input, select, textarea) { max-width: 100%; min-width: 0; }
+.app-main .table-card { max-width: 100%; overflow-x: auto; }
+.app-main :is(.expenses-table, .incomes-table) { width: 100%; }
+.app-main .category-tabs { max-width: 100%; }
+.app-page .modal-overlay { padding: 16px; overflow-y: auto; }
+.app-page .modal { max-height: calc(100dvh - 32px); overflow-y: auto; }
+.app-page .modal-actions { flex-wrap: wrap; }
+.app-main .month-selector { max-width: 100%; }
+.app-main :is(.month-btn, .month-nav-btn) { min-width: 36px; min-height: 36px; }
+.app-main .month-nav-btn { border: 1px solid var(--border-color, #e1e8e3); background: var(--card-bg, #fff); color: inherit; border-radius: 8px; cursor: pointer; }
+.auth-page .login-container { margin-block: auto; }
+.auth-page :is(.form-section, .brand-section) { min-width: 0; }
+
+@media (max-width: 1200px) {
+  .app-main .dashboard-grid, .app-main .charts-grid { grid-template-columns: minmax(0, 1fr); }
+  .app-main .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .app-main .grid-left, .app-main .grid-right { gap: 20px; }
+}
+@media (max-width: 900px) {
+  body.app-page { grid-template-columns: minmax(0, 1fr); }
+  .page-ia > .layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .app-page .app-sidebar { position: sticky; top: 0; z-index: 50; width: 100%; height: auto; min-height: 64px; padding: 10px 16px; overflow: visible; border-right: 0; border-bottom: 1px solid var(--border-color, var(--border, #e1e8e3)); background: var(--card-bg, var(--surface, #fff)); }
+  .app-page .brand-wrapper { width: 100%; min-height: 44px; margin: 0; padding: 0; }
+  .app-page .brand-wrapper > .menu-icon { display: none; }
+  .navigation-toggle { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid var(--border-color, var(--border, #e1e8e3)); border-radius: 10px; background: transparent; color: var(--text-dark, var(--text, #203b30)); cursor: pointer; }
+  .navigation-toggle svg { width: 22px; height: 22px; }
+  .app-page .app-sidebar .nav-container { display: none; position: absolute; top: 100%; left: 0; right: 0; padding: 12px 16px 20px; max-height: calc(100dvh - 80px); overflow-y: auto; background: inherit; border-bottom: 1px solid var(--border-color, var(--border, #e1e8e3)); box-shadow: 0 12px 20px #10291c14; }
+  .app-page .app-sidebar.navigation-open .nav-container { display: flex; }
+  .app-page .app-sidebar .nav-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .app-page .nav-bottom { margin-top: 12px; padding-top: 12px; }
+  .app-page .app-main { padding: 28px 24px; }
+  .page-ia .app-main { padding: 0; }
+  .app-main .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+  .app-main .header { align-items: center; flex-direction: row; }
+  .app-main .header-actions { width: auto; flex-direction: row; }
+  .app-main :is(.btn-add, .btn-filter) { min-height: 44px; }
+  .app-main .expenses-table { min-width: 600px; }
+  .app-main .incomes-table { min-width: 580px; }
+}
+@media (max-width: 600px) {
+  .app-page .app-main { padding: 24px 16px; }
+  .page-ia .app-main { padding: 0; }
+  .app-main :is(.header, .page-header) { align-items: stretch; flex-direction: column; }
+  .app-main .header-actions { width: 100%; }
+  .app-main .header-actions > *, .app-main .header > .btn-add { flex: 1; }
+  .app-main .header h1, .app-main .page-header h1 { font-size: 24px; }
+  .app-main .top-bar { align-items: flex-start; }
+  .app-main .user-actions { gap: 8px; }
+  .app-main .user-greeting { flex: 1; }
+  .app-main .user-greeting h1 { font-size: 21px; }
+  .app-main .summary-metrics { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .app-main .metric { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+  .app-main .metric .value { text-align: right; }
+  .app-main .settings-grid, .app-main .stats-grid { grid-template-columns: minmax(0, 1fr); }
+  .app-main :is(.summary-card, .recent-expenses-card, .chart-card, .alert-card) { padding: 20px; }
+  .app-main .alert-card { gap: 12px; }
+  .app-main .expense-item { flex-wrap: wrap; }
+  .app-main .expense-amount { margin-left: auto; }
+  .app-main .form-card { padding: 20px; }
+  .app-main .table-card > div[style*="display: flex"] { flex-wrap: wrap; gap: 12px; }
+  .app-main .table-card > div[style*="display: grid"] { grid-template-columns: minmax(0, 1fr) !important; }
+  .app-main :is(input, select, textarea) { font-size: 16px; }
+  .app-main .month-selector { width: 100%; margin-inline: 0; gap: 8px; padding-inline: 12px; }
+  .app-main .month-picker-wrapper { flex: 1; min-width: 0; }
+  .app-page .modal { padding: 20px; }
+  .app-page .modal-actions > button { flex: 1; min-height: 44px; }
+  .auth-page { padding: 16px; }
+  .auth-page .login-container { min-height: 0; }
+  .auth-page :is(.form-section, .brand-section) { padding: 24px; }
+  .auth-page .form-options { flex-wrap: wrap; gap: 12px; }
+  .auth-page input { font-size: 16px; }
+}
+@media (max-width: 360px) {
+  .app-page .app-sidebar .nav-list { grid-template-columns: minmax(0, 1fr); }
+  .app-main .user-actions { width: 100%; justify-content: flex-end; }
+  .app-main .header-actions { flex-direction: column; }
+}

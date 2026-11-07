@@ -7,8 +7,9 @@
   <link rel="stylesheet" href="login.css">
   
   <script src="api.js" defer></script>
+  <link rel="stylesheet" href="responsive.css">
 </head>
-<body>
+<body class="auth-page">
 
   <main class="login-container">
     <!-- Esquerda: Marca e Ilustração -->
@@ -61,7 +62,7 @@
             <input type="checkbox" id="rememberMe">
             Lembrar de mim
           </label>
-          <a href="#" class="forgot-password" id="forgotPasswordLink">Esqueceu sua senha?</a>
+          <a href="esqueci-senha.html" class="forgot-password" id="forgotPasswordLink">Esqueceu sua senha?</a>
         </div>
 
         <button type="submit" class="btn-submit">Entrar</button>
@@ -108,11 +109,6 @@
     // 2. Recursos ainda não disponíveis nesta versão (exigem Firebase configurado)
     document.getElementById('googleLoginBtn').addEventListener('click', () => {
       alert('Login com Google ainda não está disponível nesta versão. Use e-mail e senha.');
-    });
-
-    document.getElementById('forgotPasswordLink').addEventListener('click', (e) => {
-      e.preventDefault();
-      alert('Recuperação de senha ainda não está disponível nesta versão.');
     });
   </script>
 </body>

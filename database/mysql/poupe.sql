@@ -43,6 +43,22 @@ create table sessao_usuario (
 );
 
 -- ---------------------------------------------------------------
+-- redefinicao_senha -> backend/models/seguranca.py ("esqueci a senha")
+-- Link enviado por e-mail: vale 30 min e uma vez. Aqui fica só o hash.
+-- ---------------------------------------------------------------
+create table redefinicao_senha (
+    token_hash char(64) primary key,
+    id_usuario int not null,
+    expira_em datetime not null,
+
+    index idx_redefinicao_usuario (id_usuario),
+
+    foreign key (id_usuario)
+        references usuario(id_usuario)
+        on delete cascade
+);
+
+-- ---------------------------------------------------------------
 -- tentativa_acesso -> backend/models/seguranca.py (REV-001)
 -- Falhas de login e cadastros recentes, para limitar força bruta.
 -- ---------------------------------------------------------------
@@ -90,19 +106,36 @@ create table gasto (
 -- ---------------------------------------------------------------
 -- boleto -> backend/models/boleto.py
 -- ---------------------------------------------------------------
+-- Aba Boletos: contas a pagar. "fixo" repete todo mês (ao pagar, cria o do
+-- mês seguinte); "debito_automatico" lança o pagamento sozinho no vencimento.
+-- Pagar cria o gasto (id_gasto). Código de barras é opcional.
 create table boleto (
     id_boleto int auto_increment primary key,
 
     id_usuario int not null,
 
-    codigo_barras varchar(100) not null,
+    descricao varchar(100) not null default '',
+    id_categoria int null,
+    codigo_barras varchar(100) null,
     valor decimal(10,2) not null,
     vencimento date not null,
     status varchar(30),
+    fixo boolean not null default false,
+    debito_automatico boolean not null default false,
+    dia_vencimento int null,
+    data_pagamento date null,
+    id_gasto int null,
 
     foreign key (id_usuario)
         references usuario(id_usuario)
-        on delete cascade
+        on delete cascade,
+
+    constraint fk_boleto_categoria foreign key (id_categoria)
+        references categoria(id_categoria),
+
+    constraint fk_boleto_gasto foreign key (id_gasto)
+        references gasto(id_gasto)
+        on delete set null
 );
 
 -- ---------------------------------------------------------------

@@ -114,6 +114,9 @@ O backend também expõe rotas de atualização, boletos, orçamento, recorrênc
    MYSQL_PASSWORD=sua_senha
    MYSQL_DATABASE=poupe
    GEMINI_API_KEY=            # opcional (só para a IA)
+   SMTP_HOST=smtp.gmail.com   # opcional: e-mail de "esqueci a senha"
+   SMTP_USUARIO=seuemail@gmail.com
+   SMTP_SENHA=senha_de_app_do_gmail
    ```
 4. Rode a aplicação — o banco é criado automaticamente na primeira execução (via `setup_db.py`):
    ```bash

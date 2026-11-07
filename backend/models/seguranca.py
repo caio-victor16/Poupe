@@ -23,3 +23,14 @@ class TentativaAcesso(db.Model):
     momento = db.Column(db.DateTime, nullable=False, index=True)
 
     __table_args__ = (db.Index("idx_tentativa_chave_momento", "chave", "momento"),)
+
+
+class RedefinicaoSenha(db.Model):
+    """Link de "esqueci minha senha": vale 30 minutos e uma vez só. O e-mail leva
+    o token; o banco guarda só o hash SHA-256."""
+    __tablename__ = "redefinicao_senha"
+
+    token_hash = db.Column(db.String(64), primary_key=True)
+    id_usuario = db.Column(db.Integer, db.ForeignKey("usuario.id_usuario", ondelete="CASCADE"),
+                           nullable=False, index=True)
+    expira_em = db.Column(db.DateTime, nullable=False)

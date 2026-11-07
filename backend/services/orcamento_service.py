@@ -1,4 +1,6 @@
+from backend.crud import id_existente
 from backend.extensions import db
+from backend.models.categoria import Categoria
 from backend.models.alerta import Alerta
 from backend.models.orcamento_categoria import OrcamentoCategoria
 from backend.repositories.orcamento_repository import OrcamentoRepository
@@ -27,6 +29,9 @@ class OrcamentoService:
             raise ValueError("O campo 'limite' deve ser numérico.")
         if limite <= 0:
             raise ValueError("O limite deve ser maior que zero.")
+
+        # REV-007: categoria inexistente → 400 (antes: erro do banco → 500).
+        dados["id_categoria"] = id_existente(Categoria, "categoria")(dados["id_categoria"], "id_categoria")
 
         existente = OrcamentoCategoria.buscar_por_usuario_e_categoria(
             dados["id_usuario"], dados["id_categoria"]

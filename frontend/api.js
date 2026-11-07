@@ -93,6 +93,12 @@ const UsuarioAPI = {
     requisicao(`/usuarios/${usuarioId}`, 'PUT', { senha: novaSenha, senha_atual: senhaAtual })
 };
 
+// Recuperação de senha (telas esqueci-senha.html e redefinir-senha.html)
+const SenhaAPI = {
+  esqueci: (email) => requisicao('/senha/esqueci', 'POST', { email }),
+  redefinir: (token, senha) => requisicao('/senha/redefinir', 'POST', { token, senha })
+};
+
 // 2. MÓDULO DE CATEGORIAS
 const CategoriaAPI = {
   listar: () => requisicao('/categorias')
@@ -117,7 +123,14 @@ const AlertaAPI = {
 const BoletoAPI = {
   listarPorUsuario: (usuarioId) => requisicao(`/boletos/usuario/${usuarioId}`),
   proximosVencimentos: (usuarioId) => requisicao(`/boletos/usuario/${usuarioId}/proximos`),
-  criar: (dadosBoleto) => requisicao('/boletos', 'POST', dadosBoleto)
+  criar: (dadosBoleto) => requisicao('/boletos', 'POST', dadosBoleto),
+  atualizar: (id, dados) => requisicao(`/boletos/${id}`, 'PUT', dados),
+  excluir: (id) => requisicao(`/boletos/${id}`, 'DELETE'),
+  // Marca como pago e lança o gasto (opcional: { data_pagamento, valor }).
+  pagar: (id, dados = {}) => requisicao(`/boletos/${id}/pagar`, 'POST', dados),
+  desfazerPagamento: (id) => requisicao(`/boletos/${id}/desfazer-pagamento`, 'POST'),
+  // Débitos automáticos vencidos + avisos de vencimento.
+  processar: (usuarioId) => requisicao(`/boletos/usuario/${usuarioId}/processar`, 'POST')
 };
 
 // 5b. MÓDULO DE RECORRÊNCIAS DE GASTO (gastos fixos salvos no servidor)
@@ -178,10 +191,10 @@ const RelatorioAPI = {
 // 7. MÓDULO DE INTELIGÊNCIA ARTIFICIAL
 const IAAPI = {
 
-  conversar: (mensagem) => {
-    return requisicao('/ia', 'POST', {
-      mensagem: mensagem
-    });
+  // historico: [{ papel: 'usuario' | 'ia', texto }] das mensagens anteriores desta conversa.
+  // O servidor junta um resumo das finanças do usuário logado (não precisa enviar).
+  conversar: (mensagem, historico = []) => {
+    return requisicao('/ia', 'POST', { mensagem, historico });
   }
 
 };
@@ -356,8 +369,10 @@ const DadosLocais = {
   async sincronizar() {
     const usuarioId = Sessao.obterUsuarioId();
     if (!usuarioId) return false;
-    // Gera gastos e receitas fixas vencidos antes de ler as listas.
+    // Lança débitos automáticos de boletos e receitas fixas vencidos antes de ler as
+    // listas. (RecorrenciaAPI: só recorrências antigas não mensais; as mensais viraram boletos.)
     const processamentos = await Promise.allSettled([
+      BoletoAPI.processar(usuarioId),
       RecorrenciaAPI.processar(usuarioId),
       ReceitaRecorrenteAPI.processar(usuarioId),
     ]);
@@ -368,8 +383,15 @@ const DadosLocais = {
       this.sincronizarRecorrencias(usuarioId),
       this.sincronizarOrcamentos(usuarioId),
       this.sincronizarReceitas(usuarioId),
+      this.sincronizarBoletos(usuarioId),
     ]);
     return resultados.every(Boolean);
+  },
+
+  // Cópia dos boletos (formato do servidor, com "situacao"), lida pelo Caixa e pelo Score.
+  sincronizarBoletos(usuarioId = Sessao.obterUsuarioId()) {
+    return sincronizarCopia("poupe_boletos", () => BoletoAPI.listarPorUsuario(usuarioId),
+                            b => ({ ...b, origem: "servidor" }));
   },
 
   async sincronizarReceitas(usuarioId = Sessao.obterUsuarioId()) {
@@ -452,7 +474,7 @@ const DadosLocais = {
 // INTEGRAÇÃO COM AS PÁGINAS DO FRONT-END
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-  if (!['/', '/login.html', '/cadastro.html'].includes(window.location.pathname)) {
+  if (!['/', '/login.html', '/cadastro.html', '/esqueci-senha.html', '/redefinir-senha.html'].includes(window.location.pathname)) {
     requisicao('/sessao').then(sessao => {
       if (localStorage.getItem('usuarioId') !== String(sessao.usuario_id)) {
         localStorage.setItem('usuarioId', sessao.usuario_id);

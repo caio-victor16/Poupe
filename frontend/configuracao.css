@@ -11,11 +11,11 @@
 
 /* TEMA ESCURO (VARIÁVEIS) */
 body.dark-mode {
-  --card-bg: #1e293b;
-  --border-color: #334155;
-  --bg-color: #0f172a;
-  --text-dark: #f8fafc;
-  --text-muted: #94a3b8;
+  --card-bg: #192720;
+  --border-color: #304238;
+  --bg-color: #111c18;
+  --text-dark: #e5eee8;
+  --text-muted: #a5b8ac;
 }
 
 /* RESET E LAYOUT BASE */
@@ -387,11 +387,11 @@ main {
 
 /* --- TEMA ESCURO COMPLETO E PADRONIZADO --- */
 body.dark-mode {
-  --bg-color: #0f172a;
-  --card-bg: #1e293b;
-  --text-dark: #f8fafc;
-  --text-muted: #94a3b8;
-  --border-color: #334155;
+  --bg-color: #111c18;
+  --card-bg: #192720;
+  --text-dark: #e5eee8;
+  --text-muted: #a5b8ac;
+  --border-color: #304238;
   background-color: var(--bg-color) !important;
   color: var(--text-dark) !important;
 }
@@ -405,7 +405,7 @@ body.dark-mode p,
 body.dark-mode span,
 body.dark-mode div,
 body.dark-mode label {
-  color: #ffffff !important;
+  color: #e5eee8 !important;
 }
 
 /* 2. Menu Lateral e Conteúdo Principal mantendo o padrão */
@@ -421,19 +421,19 @@ body.dark-mode aside {
 /* 3. Logo e Título "poupe+" */
 body.dark-mode .brand,
 body.dark-mode .brand-wrapper * {
-  color: #ffffff !important;
+  color: #e5eee8 !important;
 }
 
 /* 4. Links do Menu Lateral */
 body.dark-mode .nav-item a,
 body.dark-mode .nav-item i {
-  color: #ffffff !important;
+  color: #e5eee8 !important;
 }
 
 /* 5. Item Ativo no Menu Lateral */
 body.dark-mode .nav-item.active a {
-  background-color: #065f46 !important; /* Verde escuro idêntico ao padrão */
-  color: #ffffff !important;
+  background-color: #263e31 !important; /* Verde escuro idêntico ao padrão */
+  color: #e5eee8 !important;
 }
 
 /* 6. Cards de Configurações, Alertas e Metas */
@@ -448,7 +448,7 @@ body.dark-mode .goal-card {
 body.dark-mode .panel-input {
   background-color: var(--bg-color) !important;
   border-color: var(--border-color) !important;
-  color: #ffffff !important;
+  color: #e5eee8 !important;
 }
 
 /* CELULAR */

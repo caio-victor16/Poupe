@@ -254,3 +254,21 @@ body {
     padding: 30px 24px;
   }
 }
+/* Esqueci / redefinir senha */
+.form-feedback {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #065f46;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.form-feedback.erro {
+  background: #fef2f2;
+  color: #991b1b;
+}
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

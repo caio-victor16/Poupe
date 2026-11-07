@@ -232,13 +232,13 @@ main {
 
 /* --- TEMA ESCURO COMPLETO --- */
 body.dark-mode {
-  --bg-color: #0f172a;
-  --card-bg: #1e293b;
-  --text-dark: #ffffff;
-  --text-muted: #cbd5e1;
-  --border-color: #334155;
-  background-color: #0f172a !important;
-  color: #ffffff !important;
+  --bg-color: #111c18;
+  --card-bg: #192720;
+  --text-dark: #e5eee8;
+  --text-muted: #a5b8ac;
+  --border-color: #304238;
+  background-color: #111c18 !important;
+  color: #e5eee8 !important;
 }
 
 body.dark-mode *,
@@ -250,34 +250,34 @@ body.dark-mode span,
 body.dark-mode div,
 body.dark-mode label,
 body.dark-mode input {
-  color: #ffffff !important;
+  color: #e5eee8 !important;
 }
 
 body.dark-mode main,
 body.dark-mode aside {
-  background-color: #1e293b !important;
-  border-color: #334155 !important;
+  background-color: #192720 !important;
+  border-color: #304238 !important;
 }
 
 body.dark-mode .nav-item a,
 body.dark-mode .nav-item i {
-  color: #ffffff !important;
+  color: #e5eee8 !important;
 }
 
 body.dark-mode .nav-item.active {
-  background-color: #065f46 !important;
+  background-color: #263e31 !important;
   border-radius: 8px;
 }
 
 body.dark-mode .nav-item.active * {
-  color: #ffffff !important;
+  color: #e5eee8 !important;
 }
 
 body.dark-mode .stat-card,
 body.dark-mode .chart-card,
 body.dark-mode .month-selector {
-  background-color: #1e293b !important;
-  border-color: #334155 !important;
+  background-color: #192720 !important;
+  border-color: #304238 !important;
 }
 
 /* Responsividade Básica */

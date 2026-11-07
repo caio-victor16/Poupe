@@ -6,9 +6,12 @@
 <title>Poupe+ | Cofrinho e Metas</title>
 <link rel="stylesheet" href="gastos.css">
 <script src="vendor/lucide-1.69.0.min.js"></script>
+  <link rel="stylesheet" href="responsive.css">
+  <link rel="stylesheet" href="tema-escuro.css">
+  <script src="responsive.js" defer></script>
 </head>
-<body>
-  <aside>
+<body class="app-page page-cofrinho">
+  <aside class="app-sidebar">
     <div class="brand-wrapper">
     <div class="brand">poupe+</div>
     <i data-lucide="menu" class="menu-icon"></i>
@@ -21,10 +24,11 @@
     <li class="nav-item "><a href="caixa.html"><i data-lucide="landmark"></i>Caixa</a></li>
     <li class="nav-item active"><a href="cofrinho.html"><i data-lucide="piggy-bank"></i>Cofrinho</a></li>
     <li class="nav-item"><a href="orcamento.html"><i data-lucide="pie-chart"></i>Orçamento</a></li>
-    <li class="nav-item"><a href="recorrencia.html"><i data-lucide="repeat"></i>Recorrência</a></li>
+    <li class="nav-item"><a href="boletos.html"><i data-lucide="receipt"></i>Boletos</a></li>
     <li class="nav-item"><a href="desperdicio.html"><i data-lucide="trending-down"></i>Desperdício</a></li>
     <li class="nav-item"><a href="score.html"><i data-lucide="award"></i>Score</a></li>
     <li class="nav-item"><a href="relatorios.html"><i data-lucide="bar-chart-3"></i>Relatórios</a></li>
+    <li class="nav-item"><a href="ia.html"><i data-lucide="sparkles"></i>IA Assistente</a></li>
     </ul>
     <ul class="nav-list nav-bottom">
     <li class="nav-item"><a href="configuracoes.html"><i data-lucide="settings"></i>Configurações</a></li>
@@ -33,7 +37,7 @@
     </nav>
     </aside>
     
-<main>
+<main class="app-main">
 <div id="listView">
 <div class="header">
 <h1>Cofrinho / Metas</h1>
@@ -58,7 +62,7 @@
 <div id="formView" class="hidden">
 <div class="form-header">
 <button type="button" class="btn-back" id="btnHideAddForm"><i data-lucide="arrow-left"></i>Voltar</button>
-<h1>Criar Nova Meta de Economia</h1>
+<h1 id="formTitulo">Criar Nova Meta de Economia</h1>
 </div>
 <div class="form-card">
 <form id="formCofrinho">
@@ -112,14 +116,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     localStorage.setItem(chaveUsuario("poupe_cofrinhos"), JSON.stringify(m));
   }
 
-  btnShowAddForm.addEventListener("click", () => {
+  // id_cofrinho em edição; null = novo cofrinho.
+  let editandoId = null;
+  const formTitulo = document.getElementById("formTitulo");
+  const botaoSalvar = formCofrinho.querySelector('button[type="submit"]');
+
+  function abrirFormulario(item) {
+    editandoId = item ? item.id_cofrinho : null;
+    formCofrinho.reset();
+    formTitulo.textContent = item ? "Editar Meta de Economia" : "Criar Nova Meta de Economia";
+    botaoSalvar.textContent = item ? "Salvar alterações" : "Criar Cofrinho";
+    if (item) {
+      document.getElementById("tituloMeta").value = item.titulo;
+      document.getElementById("metaValor").value = String(item.alvo).replace(".", ",");
+      document.getElementById("prazoMeses").value = item.prazoMeses;
+      document.getElementById("metaGuardado").value = String(item.guardado).replace(".", ",");
+    }
     listView.classList.add("hidden");
     formView.classList.remove("hidden");
-  });
-  btnHideAddForm.addEventListener("click", () => {
+  }
+  function fecharFormulario() {
+    editandoId = null;
     formView.classList.add("hidden");
     listView.classList.remove("hidden");
-  });
+  }
+
+  btnShowAddForm.addEventListener("click", () => abrirFormulario(null));
+  btnHideAddForm.addEventListener("click", fecharFormulario);
 
   // Cálculo da Simulação do Cofrinho do Troco
   function calcularTroco() {
@@ -162,7 +185,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       html += `<div class="table-card" style="padding: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
           <strong>${textoHTML(m.titulo)}</strong>
-          <button class="delete-btn" data-id="${textoHTML(m.id)}" type="button"><i data-lucide="trash-2"></i></button>
+          <span>${m.origem === "servidor" ? `<button class="edit-btn" data-id="${textoHTML(m.id)}" type="button" title="Editar" aria-label="Editar"><i data-lucide="pencil"></i></button>` : ""}<button class="delete-btn" data-id="${textoHTML(m.id)}" type="button" title="Excluir" aria-label="Excluir"><i data-lucide="trash-2"></i></button></span>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px;" class="text-muted">
           <span>Guardado: <b>R$ ${Number(m.guardado).toFixed(2)}</b></span>
@@ -197,6 +220,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           salvarMetas(pegarMetas().filter(x => String(x.id) !== String(item.id)));
         }
         renderizar();
+      });
+    });
+
+    document.querySelectorAll(".edit-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const item = pegarMetas().find(x => String(x.id) === String(btn.dataset.id));
+        if (item && item.origem === "servidor") abrirFormulario(item);
       });
     });
 
@@ -237,20 +267,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    const botao = formCofrinho.querySelector('button[type="submit"]');
-    botao.disabled = true;
+    botaoSalvar.disabled = true;
     try {
-      await CofrinhoAPI.criar({ titulo, valor_alvo: alvo, valor_guardado: guardado, prazo_meses: prazoMeses });
+      const dados = { titulo, valor_alvo: alvo, valor_guardado: guardado, prazo_meses: prazoMeses };
+      if (editandoId) await CofrinhoAPI.atualizar(editandoId, dados);
+      else await CofrinhoAPI.criar(dados);
     } catch (erro) {
       alert(`Não foi possível salvar: ${erro.message}`);
       return;
     } finally {
-      botao.disabled = false;
+      botaoSalvar.disabled = false;
     }
     await DadosLocais.sincronizarCofrinhos();
     formCofrinho.reset();
-    formView.classList.add("hidden");
-    listView.classList.remove("hidden");
+    fecharFormulario();
     renderizar();
   });
 
