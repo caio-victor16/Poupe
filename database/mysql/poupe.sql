@@ -657,4 +657,183 @@ begin
 
 end $$
 
+-- usada em: caixa_repository (média de gastos e boletos pendentes em 30 dias)
+create procedure sp_caixa_calcular(
+    in p_id_usuario int
+)
+begin
+
+    select
+        (
+            select coalesce(sum(g.valor), 0) / 30
+            from gasto g
+            where g.id_usuario = u.id_usuario
+              and g.data >= date_sub(curdate(), interval 30 day)
+              and g.data <= curdate()
+        ) as media_diaria,
+        (
+            select coalesce(sum(b.valor), 0)
+            from boleto b
+            where b.id_usuario = u.id_usuario
+              and coalesce(b.status, '') <> 'pago'
+              and b.vencimento <= date_add(curdate(), interval 30 day)
+        ) as boletos_30_dias
+    from usuario u
+    where u.id_usuario = p_id_usuario;
+
+end $$
+
+-- usada em: cofrinho_repository (simulação de troco arredondado)
+create procedure sp_cofrinho_simular(
+    in p_id_usuario int,
+    in p_passo decimal(10,2),
+    in p_dias int
+)
+begin
+
+    select
+        coalesce(sum(ceil(valor / p_passo) * p_passo - valor), 0) as troco,
+        count(*) as quantidade
+    from gasto
+    where id_usuario = p_id_usuario
+      and data >= date_sub(curdate(), interval p_dias day)
+      and data <= curdate();
+
+end $$
+
+-- usada em: desperdicio_repository (categorias com gasto atual acima da média)
+create procedure sp_desperdicio_categorias_acima_media(
+    in p_id_usuario int
+)
+begin
+
+    select
+        categoria,
+        mes_atual,
+        round(media, 2) as media_mensal,
+        round(mes_atual - media, 2) as excesso
+    from (
+        select
+            c.nome as categoria,
+            coalesce(sum(case when g.data >= date_format(curdate(), '%Y-%m-01')
+                              then g.valor end), 0) as mes_atual,
+            coalesce(sum(case when g.data < date_format(curdate(), '%Y-%m-01')
+                              then g.valor end), 0)
+            / nullif(count(distinct case when g.data < date_format(curdate(), '%Y-%m-01')
+                                         then date_format(g.data, '%Y-%m') end), 0) as media
+        from gasto g
+        inner join categoria c on c.id_categoria = g.id_categoria
+        where g.id_usuario = p_id_usuario
+          and g.data >= date_sub(date_format(curdate(), '%Y-%m-01'), interval 3 month)
+        group by c.nome
+    ) t
+    where media >= 30
+      and mes_atual > media
+    order by excesso desc;
+
+end $$
+
+-- usada em: desperdicio_repository (gastos recorrentes com valor estável)
+create procedure sp_desperdicio_assinaturas_provaveis(
+    in p_id_usuario int
+)
+begin
+
+    select
+        lower(trim(descricao)) as descricao,
+        count(distinct date_format(data, '%Y-%m')) as meses,
+        round(avg(valor), 2) as valor_mensal,
+        round(avg(valor) * 12, 2) as custo_anual
+    from gasto
+    where id_usuario = p_id_usuario
+      and trim(coalesce(descricao, '')) <> ''
+      and data >= date_sub(curdate(), interval 4 month)
+    group by lower(trim(descricao))
+    having count(distinct date_format(data, '%Y-%m')) >= 2
+       and count(*) <= count(distinct date_format(data, '%Y-%m'))
+       and (max(valor) - min(valor)) <= avg(valor) * 0.1
+    order by avg(valor) desc;
+
+end $$
+
+-- usada em: desperdicio_repository (possíveis lançamentos repetidos)
+create procedure sp_desperdicio_gastos_duplicados(
+    in p_id_usuario int
+)
+begin
+
+    select
+        descricao,
+        valor,
+        data,
+        count(*) as vezes
+    from gasto
+    where id_usuario = p_id_usuario
+      and data >= date_sub(curdate(), interval 30 day)
+    group by descricao, valor, data
+    having count(*) > 1
+    order by data desc;
+
+end $$
+
+-- usada em: orcamento_repository (limite e gasto do mês por categoria)
+create procedure sp_orcamento_status_mes(
+    in p_id_usuario int
+)
+begin
+
+    select
+        o.id_orcamento,
+        o.id_categoria,
+        c.nome as categoria,
+        o.limite,
+        coalesce(sum(g.valor), 0) as gasto_mes
+    from orcamento_categoria o
+    inner join categoria c on c.id_categoria = o.id_categoria
+    left join gasto g
+        on g.id_usuario = o.id_usuario
+       and g.id_categoria = o.id_categoria
+       and g.data >= date_format(curdate(), '%Y-%m-01')
+       and g.data < date_add(date_format(curdate(), '%Y-%m-01'), interval 1 month)
+    where o.id_usuario = p_id_usuario
+    group by o.id_orcamento, o.id_categoria, c.nome, o.limite
+    order by c.nome;
+
+end $$
+
+-- usada em: score_repository (indicadores que compõem o score financeiro)
+create procedure sp_score_indicadores(
+    in p_id_usuario int
+)
+begin
+
+    select
+        u.renda_mensal,
+        u.limite_gastos,
+        (
+            select coalesce(sum(g.valor), 0)
+            from gasto g
+            where g.id_usuario = u.id_usuario
+              and g.data >= date_format(curdate(), '%Y-%m-01')
+              and g.data < date_add(date_format(curdate(), '%Y-%m-01'), interval 1 month)
+        ) as gasto_mes,
+        (
+            select count(*)
+            from boleto b
+            where b.id_usuario = u.id_usuario
+              and b.status <> 'pago'
+              and b.vencimento < curdate()
+        ) as boletos_atrasados,
+        (
+            select count(*)
+            from boleto b
+            where b.id_usuario = u.id_usuario
+              and b.status <> 'pago'
+              and b.vencimento between curdate() and date_add(curdate(), interval 7 day)
+        ) as boletos_na_semana
+    from usuario u
+    where u.id_usuario = p_id_usuario;
+
+end $$
+
 delimiter ;
