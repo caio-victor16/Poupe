@@ -2,7 +2,7 @@
 
 O **Poupe+** é um aplicativo web de controle financeiro para **pequenos empreendedores** (donos de restaurantes e comércios), que ajuda a organizar gastos, boletos e orçamento e a **evitar o endividamento** com alertas e previsões automáticas, no lugar de papel e planilhas.
 
-> **Turma:** _[preencher]_ · **Projeto:** Poupe+ · Veja a [equipe](#-equipe).
+> **Turma:** 3D2 · **Projeto:** Poupe+ ·.
 
 ## 🎯 Problema e público-alvo
 
@@ -181,17 +181,6 @@ Para diagnosticar, olhe o terminal do servidor: ao iniciar, o `run.py` mostra `I
 | `LOGIN_FALHAS_EMAIL`, `LOGIN_FALHAS_IP`, `LOGIN_JANELA_MINUTOS`, `CADASTROS_IP_HORA` | `5`, `30`, `15`, `10` | Limites de tentativas de login e cadastro |
 | `POUPE_DEBUG` | `false` | Modo debug |
 | `SESSION_COOKIE_SECURE` | `false` | Use `true` quando houver HTTPS |
-
-> Nunca envie o `.env` para o GitHub nem o compartilhe: ele contém a senha do banco e a chave da IA. O `.env.example` **vai** para o GitHub, então deve ter só nomes de variáveis e valores de exemplo, nunca chaves reais.
-
-## ⚠️ Limitações conhecidas
-
-- **Score, desperdício, caixa e cofrinho** calculam no navegador a partir de dados sincronizados do servidor. O backend também tem rotas e procedures para isso (`/score`, `/desperdicios`, `/caixa`, `/cofrinho`), mas as telas não as chamam.
-- **Login com Google** não está disponível.
-- **Tabela `extrato`:** existe no banco, mas não tem model, rota nem tela.
-- **IA:** depende da cota gratuita do Google, que pode esgotar ou ficar indisponível por alguns minutos.
-- Não há termos de consentimento nem hospedagem pública do sistema nesta versão.
-- `frontend/caixa (1).html` é uma cópia antiga da tela Caixa, sem link no menu, e pode ser removida.
 
 ## 👨‍💻 Equipe
 
