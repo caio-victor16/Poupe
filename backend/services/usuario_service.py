@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 
 from backend.crud import dinheiro, email, telefone, texto, validar_campos
@@ -5,6 +6,11 @@ from backend.extensions import db
 from backend.models.usuario import Usuario
 from backend.passwords import gerar_hash, conferir_senha, senha_tem_hash
 from backend import seguranca
+
+
+# Versão do texto em frontend/termos.html. Ao mudar o termo, troque aqui também:
+# o banco guarda qual versão cada usuário aceitou.
+VERSAO_TERMOS = "2026-11"
 
 
 class SenhaAtualIncorreta(ValueError):
@@ -40,11 +46,15 @@ class UsuarioService:
         limpos.update(validar_campos({"telefone": telefone}, dados, parcial=True))
         if "senha" not in dados:
             raise ValueError("O campo 'senha' é obrigatório.")
+        # LGPD, art. 8º: consentimento expresso, nunca presumido.
+        if dados.get("aceite_termos") is not True:
+            raise ValueError("Para criar a conta, leia e aceite os Termos de Uso e o Termo de Consentimento.")
         if Usuario.buscar_por_email(limpos["email"]):
             raise ValueError("Já existe um usuário cadastrado com este e-mail.")
         senha_hash = gerar_hash(dados["senha"])
 
-        usuario = Usuario(senha=senha_hash, **limpos)
+        usuario = Usuario(senha=senha_hash, termos_aceitos_em=datetime.now(),
+                          termos_versao=VERSAO_TERMOS, **limpos)
         usuario.salvar()
         return usuario.to_dict()
 

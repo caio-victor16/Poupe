@@ -517,6 +517,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Lógica da tela de Cadastro (cadastro.html)
   if (caminhoAtual.includes('cadastro')) {
     const formCadastro = document.querySelector('form');
+    const caixaTermos = document.getElementById('aceiteTermos');
+    if (caixaTermos) {
+      const avisoTermos = () => caixaTermos.setCustomValidity(
+        caixaTermos.checked ? '' : 'Para continuar, marque que leu e aceita os termos.');
+      avisoTermos();
+      caixaTermos.addEventListener('change', avisoTermos);
+    }
 
     if (formCadastro) {
       formCadastro.addEventListener('submit', async (e) => {
@@ -527,8 +534,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const senha = document.getElementById('password')?.value || '';
         const renda_mensal = parseFloat(document.getElementById('income')?.value || 0);
         const limite_gastos = parseFloat(document.getElementById('limit')?.value || 0);
+        // LGPD: o aceite precisa ser marcado pela pessoa; o servidor recusa sem ele.
+        const aceite_termos = document.getElementById('aceiteTermos')?.checked === true;
+        if (!aceite_termos) {
+          alert('Para criar a conta, leia e aceite os Termos de Uso e o Termo de Consentimento.');
+          return;
+        }
 
-        const dadosUsuario = { nome, email, senha, renda_mensal, limite_gastos };
+        const dadosUsuario = { nome, email, senha, renda_mensal, limite_gastos, aceite_termos };
 
         try {
           await UsuarioAPI.cadastrar(dadosUsuario);

@@ -22,7 +22,10 @@ create table usuario (
     telefone varchar(20),
     senha varchar(255) not null,
     renda_mensal decimal(10,2) not null,
-    limite_gastos decimal(10,2) not null
+    limite_gastos decimal(10,2) not null,
+    -- Evidência do consentimento (LGPD, art. 8º): quando e qual versão do termo foi aceita.
+    termos_aceitos_em datetime null,
+    termos_versao varchar(20) null
 );
 
 -- ---------------------------------------------------------------

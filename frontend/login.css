@@ -272,3 +272,44 @@ body {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Termos de Uso e Consentimento (cadastro e login) */
+.aviso-dados {
+  margin: 4px 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #64748b;
+}
+.terms-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #475569;
+  cursor: pointer;
+}
+.terms-group input[type="checkbox"] {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: #0b3c26;
+  cursor: pointer;
+}
+.terms-group a,
+.termos-link a {
+  color: #0b3c26;
+  font-weight: 600;
+  text-decoration: none;
+}
+.terms-group a:hover,
+.termos-link a:hover {
+  text-decoration: underline;
+}
+.termos-link {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+}

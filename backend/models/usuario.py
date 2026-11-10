@@ -11,6 +11,9 @@ class Usuario(db.Model):
     senha = db.Column(db.String(255), nullable=False)
     renda_mensal = db.Column(db.Numeric(10, 2), nullable=False)
     limite_gastos = db.Column(db.Numeric(10, 2), nullable=False)
+    # Aceite dos Termos de Uso e de Consentimento (registrado no cadastro).
+    termos_aceitos_em = db.Column(db.DateTime)
+    termos_versao = db.Column(db.String(20))
 
     def salvar(self):
         db.session.add(self)

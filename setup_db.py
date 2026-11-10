@@ -104,6 +104,8 @@ def preparar_comandos(caminho=SQL_FILE):
 # poupe.sql já as tem; isto é só para bancos de versões anteriores).
 # (tabela, coluna, comando que acrescenta)
 COLUNAS_NOVAS = [
+    ("usuario", "termos_aceitos_em", "ALTER TABLE usuario ADD COLUMN termos_aceitos_em datetime NULL"),
+    ("usuario", "termos_versao", "ALTER TABLE usuario ADD COLUMN termos_versao varchar(20) NULL"),
     ("boleto", "descricao", "ALTER TABLE boleto ADD COLUMN descricao varchar(100) NOT NULL DEFAULT ''"),
     ("boleto", "id_categoria", "ALTER TABLE boleto ADD COLUMN id_categoria int NULL, "
      "ADD CONSTRAINT fk_boleto_categoria FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria)"),
