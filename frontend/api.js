@@ -1,4 +1,22 @@
 const API_URL = window.location.origin;
+
+// Aberto pelo arquivo (file:///C:/.../cadastro.html) não há servidor: toda
+// chamada falha com "Failed to fetch". Mostra como abrir do jeito certo.
+if (window.location.protocol === 'file:') {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.body.innerHTML = `
+      <div style="max-width:520px;margin:12vh auto;padding:28px;font-family:system-ui,sans-serif;
+                  background:#fff;color:#1f2937;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.12);line-height:1.5">
+        <h2 style="margin:0 0 12px;color:#024731">Abra o Poupe+ pelo servidor</h2>
+        <p style="margin:0 0 12px">Esta página foi aberta direto do arquivo, então ela não consegue falar com o backend.</p>
+        <ol style="margin:0 0 12px;padding-left:20px">
+          <li>No terminal, na pasta do projeto: <code>python run.py</code></li>
+          <li>Abra o endereço que aparecer, por exemplo
+            <a href="http://127.0.0.1:5000/" style="color:#024731;font-weight:600">http://127.0.0.1:5000</a></li>
+        </ol>
+      </div>`;
+  });
+}
 // Somente para texto HTML e atributos entre aspas; não usar em JS, CSS ou URLs.
 function textoHTML(valor) {
   const entidades = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -57,7 +75,12 @@ async function requisicao(endpoint, metodo = 'GET', dados = null) {
   };
   if (dados) config.body = JSON.stringify(dados);
 
-  const resposta = await fetch(`${API_URL}${endpoint}`, config);
+  let resposta;
+  try {
+    resposta = await fetch(`${API_URL}${endpoint}`, config);
+  } catch (erroRede) {
+    throw new Error('Não foi possível conectar ao servidor. Confira se o "python run.py" está rodando e se a página foi aberta pelo endereço dele.');
+  }
 
   // Respostas sem corpo (ex.: DELETE -> 204) não são JSON válido;
   // tentar fazer JSON.parse('') quebrava todas as exclusões antes.
