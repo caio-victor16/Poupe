@@ -44,6 +44,19 @@ def escolher_porta(host, preferida):
     return None
 
 
+def situacao_ia():
+    """Uma linha no terminal dizendo se a IA vai funcionar (nunca mostra a chave)."""
+    from backend.config import ARQUIVO_ENV
+
+    chave = (os.getenv("GEMINI_API_KEY") or "").strip().strip("\"'")
+    if chave:
+        modelo = (os.getenv("GEMINI_MODEL") or "gemini-flash-latest").strip()
+        return f"IA: ativada (modelo {modelo})."
+    if not ARQUIVO_ENV.exists():
+        return f"IA: DESATIVADA — não existe o arquivo {ARQUIVO_ENV}. Crie-o com a linha GEMINI_API_KEY=sua_chave."
+    return f"IA: DESATIVADA — falta a linha GEMINI_API_KEY=sua_chave em {ARQUIVO_ENV}."
+
+
 def main():
     from setup_db import ErroInstalacao, criar_banco
 
@@ -75,6 +88,7 @@ def main():
         # Link do e-mail de "esqueci a senha" acompanha a porta real.
         app.config["APP_URL"] = endereco
     print(f"Poupe+ rodando. Abra no navegador: {endereco}")
+    print(situacao_ia())
 
     app.run(
         host=HOST, port=porta, debug=app.config["DEBUG"],

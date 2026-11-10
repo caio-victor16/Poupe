@@ -46,6 +46,25 @@ class ErroIA(RuntimeError):
     """Falha conhecida cuja mensagem foi escrita para exibição ao usuário."""
 
 
+def ordenar_reservas(nomes):
+    """Ordem das reservas: primeiro os que costumam ter mais cota gratuita.
+    1) apelidos *-lite-latest / *-latest; 2) versões estáveis lite; 3) estáveis flash;
+    4) preview/exp; 5) famílias diferentes (ex.: gemini-omni-*), que em geral não têm
+    cota no plano gratuito. Dentro de cada grupo, a versão mais nova primeiro."""
+    import re
+
+    def grupo(nome):
+        if not re.match(r"^gemini-(\d|flash)", nome):
+            return 5
+        if any(x in nome for x in ("preview", "exp")):
+            return 4
+        if nome.endswith("-latest"):
+            return 0
+        return 2 if "lite" in nome else 3
+
+    return sorted(dict.fromkeys(nomes), key=lambda n: (grupo(n), "lite" not in n, [-ord(c) for c in n]))
+
+
 class GeminiService:
     BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
@@ -90,24 +109,44 @@ class GeminiService:
                      and not any(x in m["name"] for x in ("image", "tts", "live", "audio", "embedding", "robotics"))]
         except (requests.RequestException, ValueError, KeyError):
             return []
-        nomes.sort(reverse=True)
-        nomes.sort(key=lambda n: ("lite" in n, any(x in n for x in ("preview", "exp"))))
+        nomes = ordenar_reservas(nomes)
         c["lista"], c["quando"] = nomes, time.time()
         return nomes
 
+    # Modelos que acabaram de responder 429 (sem cota) ou 404 ficam de fora por um tempo,
+    # para as próximas mensagens não gastarem tentativas neles.
+    _pausados = {}
+
+    @classmethod
+    def _pausar(cls, modelo, segundos):
+        cls._pausados[modelo] = time.time() + segundos
+
+    @classmethod
+    def _pausado(cls, modelo):
+        return cls._pausados.get(modelo, 0) > time.time()
+
     def _enviar(self, mensagem, contexto, historico):
         """Tenta o modelo principal e, se estiver sobrecarregado (503), sem cota (429) ou
-        inexistente (404), passa para outro modelo que a chave realmente possui (máx. 3 tentativas).
+        inexistente (404), passa para as reservas (GEMINI_MODEL_RESERVA e depois os modelos
+        flash que a chave possui, os de mais cota grátis primeiro). Máx. 3 chamadas.
         Timeout NÃO troca de modelo: o provedor pode ter processado (e cobrado) a chamada."""
         payload = self.montar_payload(mensagem, contexto, historico)
-        tentativas = [self.model]
-        reservas = list(self.reservas)
-        disponiveis = None
+        candidatos = list(dict.fromkeys([self.model, *self.reservas]))
+        lista_carregada = False
         resposta = None
-        i = 0
-        while i < len(tentativas) and i < 3:
-            modelo = tentativas[i]
+        i = feitas = 0
+        while feitas < 3:
+            if i >= len(candidatos):
+                if lista_carregada:
+                    break
+                lista_carregada = True
+                candidatos += [m for m in self._modelos_flash() if m not in candidatos]
+                continue
+            modelo = candidatos[i]
             i += 1
+            if self._pausado(modelo):
+                continue
+            feitas += 1
             try:
                 resposta = requests.post(
                     f"{self.BASE_URL}/{modelo}:generateContent",
@@ -126,17 +165,18 @@ class GeminiService:
                 det = {}
             log.warning("Gemini HTTP %s no modelo %s: %s", resposta.status_code, modelo,
                         (det.get("message") or "")[:300])
-            if disponiveis is None:
-                disponiveis = self._modelos_flash()
-                if disponiveis:
-                    reservas = [m for m in reservas if m in disponiveis]
-                tentativas += reservas + [m for m in disponiveis if m not in reservas]
-                tentativas = list(dict.fromkeys(tentativas))
+            if resposta.status_code == 429:
+                self._pausar(modelo, 600)
+            elif resposta.status_code == 404:
+                self._pausar(modelo, 3600)
+        if resposta is None:
+            raise ErroIA("O limite de uso da IA foi atingido (todos os modelos disponíveis). "
+                         "Aguarde alguns minutos ou tente amanhã.")
         return resposta
 
     def gerar_resposta(self, mensagem, contexto="", historico=()):
         if not self.api_key:
-            raise ErroIA("A IA não está configurada no servidor.")
+            raise ErroIA("A IA não está configurada no servidor: falta GEMINI_API_KEY no arquivo .env.")
         try:
             resposta = self._enviar(mensagem, contexto, historico)
             if resposta.status_code == 429:

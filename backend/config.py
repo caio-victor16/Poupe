@@ -1,9 +1,37 @@
+import codecs
+import io
 import os
 import secrets
 from datetime import timedelta
+from pathlib import Path
+
 from dotenv import load_dotenv
 
-load_dotenv()
+# .env sempre da raiz do projeto, qualquer que seja a pasta do terminal.
+ARQUIVO_ENV = Path(__file__).resolve().parent.parent / ".env"
+
+
+def ler_texto_env(caminho):
+    """Lê o .env aceitando BOM e UTF-16 (Bloco de Notas e `echo > .env` do PowerShell).
+    Sem isso, o BOM gruda no nome da primeira variável e ela "some"."""
+    try:
+        dados = Path(caminho).read_bytes()
+    except OSError:
+        return None
+    for bom, codificacao in ((codecs.BOM_UTF8, "utf-8-sig"),
+                             (codecs.BOM_UTF16_LE, "utf-16"),
+                             (codecs.BOM_UTF16_BE, "utf-16")):
+        if dados.startswith(bom):
+            return dados.decode(codificacao)
+    try:
+        return dados.decode("utf-8")
+    except UnicodeDecodeError:
+        return dados.decode("latin-1")
+
+
+_texto_env = ler_texto_env(ARQUIVO_ENV)
+if _texto_env is not None:
+    load_dotenv(stream=io.StringIO(_texto_env))
 
 
 class Config:

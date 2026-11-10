@@ -59,7 +59,7 @@ class IaController:
 
         # REV-006: sem chave, avisa sem gastar a cota do usuário.
         if not self.service.configurada:
-            return jsonify({"erro": "A IA não está configurada no servidor."}), 503
+            return jsonify({"erro": "A IA não está configurada no servidor: falta GEMINI_API_KEY no arquivo .env."}), 503
 
         config = current_app.config
         limites = [
